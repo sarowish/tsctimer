@@ -1,0 +1,10 @@
+[package]
+name = "tsctimer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.70"
+crossterm = "0.26.1"
+rand = "0.8.5"
+ratatui = "0.20.1"
