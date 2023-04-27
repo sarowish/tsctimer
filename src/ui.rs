@@ -10,6 +10,11 @@ use ratatui::{
 use crate::{app::App, timer::millis_to_string_not_running};
 
 pub fn render<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+    if app.holding_space_count > 1 || app.timer.is_running() {
+        render_timer(f, app, f.size());
+        return;
+    }
+
     let mut chunks = Layout::default()
         .constraints([Constraint::Percentage(20), Constraint::Percentage(90)].as_ref())
         .direction(Direction::Horizontal)

@@ -28,6 +28,11 @@ impl Timer {
         self.starting_time = None;
     }
 
+    pub fn reset(&mut self) {
+        self.starting_time = None;
+        self.result = Duration::new(0, 0);
+    }
+
     pub fn is_running(&self) -> bool {
         self.starting_time.is_some()
     }

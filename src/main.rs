@@ -53,6 +53,10 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
     let mut last_tick = Instant::now();
 
     loop {
+        if app.holding_space_count == 2 {
+            app.timer.reset();
+        }
+
         terminal.draw(|f| render(f, app))?;
 
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
