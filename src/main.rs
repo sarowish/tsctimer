@@ -1,4 +1,5 @@
 mod app;
+mod inspection;
 mod scramble;
 mod stats;
 mod timer;
@@ -6,6 +7,7 @@ mod ui;
 
 use crate::app::App;
 use anyhow::Result;
+use app::AppState;
 use crossterm::event::Event;
 use crossterm::event::KeyCode;
 use crossterm::execute;
@@ -53,7 +55,7 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
     let mut last_tick = Instant::now();
 
     loop {
-        if app.holding_space_count == 2 {
+        if matches!(app.state, AppState::Set) {
             app.timer.reset();
         }
 
@@ -64,23 +66,36 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
             if let Event::Key(key) = crossterm::event::read()? {
                 match key.code {
                     KeyCode::Char('q') => break,
-                    KeyCode::Char('r') => app.scramble = Scramble::new(25),
-                    KeyCode::Char(' ') => {
-                        if app.timer.is_running() {
-                            app.stop_timer();
-                        } else {
-                            app.holding_space_count += 1;
+                    KeyCode::Char('r') => app.scramble = Scramble::new(app::SCRAMBLE_LENGTH),
+                    KeyCode::Char('i') => app.toggle_inspection(),
+                    KeyCode::Char(' ') => match app.state {
+                        AppState::Idle if !app.inspection.expired => {
+                            if app.inspection_enabled && !app.inspection.is_running() {
+                                app.start_inspecting();
+                            }
+
+                            app.state = AppState::Ready;
                         }
-                    }
+                        AppState::Ready => app.state = AppState::Set,
+                        AppState::Solving => {
+                            app.stop_timer();
+                        }
+                        _ => (),
+                    },
                     _ => (),
                 }
             }
             last_tick = Instant::now();
-        } else if app.holding_space_count > 1 {
-            app.timer.start();
-            app.holding_space_count = 0;
         } else {
-            app.holding_space_count = 0;
+            app.inspection.expired = false;
+            match app.state {
+                AppState::Set => {
+                    app.inspection.stop();
+                    app.start_timer();
+                }
+                AppState::Ready => app.state = AppState::Idle,
+                _ => (),
+            }
         }
 
         if last_tick.elapsed() >= tick_rate {

@@ -1,4 +1,9 @@
-use crate::{app::App, stats::stat_entry_to_span, timer::millis_to_string_not_running};
+use crate::{
+    app::{self, App, AppState},
+    scramble::Scramble,
+    stats::stat_entry_to_span,
+    timer::millis_to_string_not_running,
+};
 use ratatui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -9,7 +14,10 @@ use ratatui::{
 };
 
 pub fn render<B: Backend>(f: &mut Frame<B>, app: &mut App) {
-    if app.holding_space_count > 1 || app.timer.is_running() {
+    if app.inspection.is_running() {
+        render_inspection(f, app, f.size());
+        return;
+    } else if matches!(app.state, AppState::Set) || app.timer.is_running() {
         render_timer(f, app, f.size());
         return;
     }
@@ -103,10 +111,39 @@ fn render_timer<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
 
     let time_text = Paragraph::new(Text::styled(
         time,
-        Style::default().fg(if app.holding_space_count > 1 {
+        Style::default().fg(if matches!(app.state, AppState::Set) {
             Color::Green
         } else {
             Color::White
+        }),
+    ))
+    .alignment(Alignment::Center);
+
+    f.render_widget(time_text, area);
+}
+
+fn render_inspection<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+    let block = Block::default().borders(Borders::ALL);
+    f.render_widget(block, area);
+
+    let Some(remaining) = app.inspection.remaining() else {
+        app.inspection.stop();
+        app.inspection.expired = true;
+        app.state = AppState::Idle;
+        app.scramble = Scramble::new(app::SCRAMBLE_LENGTH);
+        return;
+    };
+
+    let time = generate_font(&remaining.to_string());
+    let area = center_vertically(&time, area);
+
+    let time_text = Paragraph::new(Text::styled(
+        time,
+        Style::default().fg(match app.state {
+            AppState::Idle | AppState::Ready if remaining <= 4 => Color::Red,
+            AppState::Idle | AppState::Ready if remaining <= 8 => Color::Yellow,
+            AppState::Set => Color::Green,
+            _ => Color::White,
         }),
     ))
     .alignment(Alignment::Center);
