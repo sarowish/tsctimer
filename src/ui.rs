@@ -4,7 +4,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Text},
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
     Frame,
 };
 
@@ -62,9 +62,15 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .map(ListItem::new)
         .collect::<Vec<ListItem>>();
 
+    let mut state = ListState::default();
+
+    if !solves.is_empty() {
+        state.select(Some(solves.len() - 1));
+    }
+
     let solves = List::new(solves).block(Block::default().borders(Borders::ALL));
 
-    f.render_widget(solves, chunks[1]);
+    f.render_stateful_widget(solves, chunks[1], &mut state);
 }
 
 fn render_scramble<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
