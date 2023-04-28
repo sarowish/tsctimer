@@ -1,3 +1,4 @@
+use crate::{app::App, stats::stat_entry_to_span, timer::millis_to_string_not_running};
 use ratatui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
@@ -6,8 +7,6 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
-
-use crate::{app::App, timer::millis_to_string_not_running};
 
 pub fn render<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     if app.holding_space_count > 1 || app.timer.is_running() {
@@ -38,10 +37,10 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .split(area);
 
     let stats = vec![
-        ListItem::new(Span::raw(format!("time: {}", app.stats.time))),
-        ListItem::new(Span::raw(format!("mo3: {}", app.stats.mean_of_3))),
-        ListItem::new(Span::raw(format!("avg5: {}", app.stats.avg_of_5))),
-        ListItem::new(Span::raw(format!("avg12: {}", app.stats.avg_of_12))),
+        ListItem::new(stat_entry_to_span("time: ", &app.stats.time)),
+        ListItem::new(stat_entry_to_span("mo3: ", &app.stats.mean_of_3)),
+        ListItem::new(stat_entry_to_span("avg5: ", &app.stats.avg_of_5)),
+        ListItem::new(stat_entry_to_span("avg12: ", &app.stats.avg_of_12)),
     ];
 
     let stats = List::new(stats).block(Block::default().borders(Borders::ALL));

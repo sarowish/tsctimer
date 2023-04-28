@@ -1,6 +1,8 @@
-use std::fmt::Display;
-
 use crate::{app::Solve, timer::millis_to_string_not_running};
+use ratatui::{
+    style::{Color, Style},
+    text::{Span, Spans},
+};
 
 #[derive(Default)]
 pub struct StatEntry(pub Option<u128>, pub Option<u128>);
@@ -72,13 +74,24 @@ fn get_times_from_tail(times: &[u128], count: usize) -> Option<Vec<u128>> {
     }
 }
 
-impl Display for StatEntry {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{} | {}",
-            self.0.map_or("-".to_string(), millis_to_string_not_running),
-            self.1.map_or("-".to_string(), millis_to_string_not_running)
-        )
-    }
+pub fn stat_entry_to_span<'a>(s: &'a str, stat_entry: &'a StatEntry) -> Spans<'a> {
+    let current = stat_entry
+        .0
+        .map_or("-".to_string(), millis_to_string_not_running);
+    let pb = stat_entry
+        .1
+        .map_or("-".to_string(), millis_to_string_not_running);
+
+    let pb = if matches!(stat_entry.1, Some(pb) if pb == stat_entry.0.unwrap()) {
+        Span::styled(pb, Style::default().fg(Color::Red))
+    } else {
+        Span::raw(pb)
+    };
+
+    Spans::from(vec![
+        Span::raw(s.to_string()),
+        Span::raw(current),
+        Span::raw(" | "),
+        pb,
+    ])
 }
