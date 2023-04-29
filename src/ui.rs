@@ -66,7 +66,9 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     let solves = app
         .solves
         .iter()
+        .rev()
         .enumerate()
+        .rev()
         .map(|(idx, solve)| {
             format!(
                 "{}. {}",
