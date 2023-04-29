@@ -72,7 +72,7 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .map(|(idx, solve)| {
             format!(
                 "{}. {}",
-                idx,
+                idx + 1,
                 millis_to_string_not_running(solve.time.as_millis())
             )
         })
