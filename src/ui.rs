@@ -116,9 +116,6 @@ fn render_scramble<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
 }
 
 fn render_timer<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
-    let block = Block::default().borders(Borders::ALL);
-    f.render_widget(block, area);
-
     let time = app.timer.to_string();
 
     let time = generate_font(&time);
@@ -138,9 +135,6 @@ fn render_timer<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
 }
 
 fn render_inspection<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
-    let block = Block::default().borders(Borders::ALL);
-    f.render_widget(block, area);
-
     let Some(remaining) = app.inspection.remaining() else {
         app.inspection.stop();
         app.inspection.expired = true;
