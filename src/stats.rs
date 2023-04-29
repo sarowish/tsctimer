@@ -27,6 +27,8 @@ pub struct Stats {
     pub mean_of_3: StatEntry,
     pub avg_of_5: StatEntry,
     pub avg_of_12: StatEntry,
+    pub solve_count: u128,
+    pub global_mean: u128,
 }
 
 impl Stats {
@@ -41,6 +43,12 @@ impl Stats {
         self.mean_of_3.update(get_mean(&times, 3));
         self.avg_of_5.update(get_avg(&times, 5));
         self.avg_of_12.update(get_avg(&times, 12));
+
+        self.global_mean = (self.global_mean * self.solve_count
+            + solves.last().unwrap().time.as_millis())
+            / (self.solve_count + 1);
+
+        self.solve_count += 1;
     }
 }
 

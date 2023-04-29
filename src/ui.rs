@@ -40,15 +40,20 @@ pub fn render<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
 fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     let chunks = Layout::default()
-        .constraints([Constraint::Percentage(10), Constraint::Percentage(90)].as_ref())
+        .constraints([Constraint::Max(9), Constraint::Min(1)].as_ref())
         .direction(Direction::Vertical)
         .split(area);
 
     let stats = vec![
-        stat_entry_to_row("time: ", &app.stats.time),
-        stat_entry_to_row("mo3: ", &app.stats.mean_of_3),
-        stat_entry_to_row("avg5: ", &app.stats.avg_of_5),
-        stat_entry_to_row("avg12: ", &app.stats.avg_of_12),
+        stat_entry_to_row("time:", &app.stats.time),
+        stat_entry_to_row("mo3:", &app.stats.mean_of_3),
+        stat_entry_to_row("avg5:", &app.stats.avg_of_5),
+        stat_entry_to_row("avg12:", &app.stats.avg_of_12),
+        Row::new(vec![Span::raw("")]),
+        Row::new(vec![
+            Span::raw("session mean:"),
+            Span::raw(millis_to_string_not_running(app.stats.global_mean)),
+        ]),
     ];
 
     let stats = Table::new(stats)
