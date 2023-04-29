@@ -1,7 +1,8 @@
 use crate::{app::Solve, timer::millis_to_string_not_running};
 use ratatui::{
     style::{Color, Style},
-    text::{Span, Spans},
+    text::Span,
+    widgets::Row,
 };
 
 #[derive(Default)]
@@ -74,7 +75,7 @@ fn get_times_from_tail(times: &[u128], count: usize) -> Option<Vec<u128>> {
     }
 }
 
-pub fn stat_entry_to_span<'a>(s: &'a str, stat_entry: &'a StatEntry) -> Spans<'a> {
+pub fn stat_entry_to_row<'a>(s: &'a str, stat_entry: &'a StatEntry) -> Row<'a> {
     let current = stat_entry
         .0
         .map_or("-".to_string(), millis_to_string_not_running);
@@ -88,10 +89,5 @@ pub fn stat_entry_to_span<'a>(s: &'a str, stat_entry: &'a StatEntry) -> Spans<'a
         Span::raw(pb)
     };
 
-    Spans::from(vec![
-        Span::raw(s.to_string()),
-        Span::raw(current),
-        Span::raw(" | "),
-        pb,
-    ])
+    Row::new(vec![Span::raw(s.to_string()), Span::raw(current), pb])
 }

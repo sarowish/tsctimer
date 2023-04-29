@@ -1,7 +1,7 @@
 use crate::{
     app::{self, App, AppState},
     scramble::Scramble,
-    stats::stat_entry_to_span,
+    stats::stat_entry_to_row,
     timer::millis_to_string_not_running,
 };
 use ratatui::{
@@ -9,7 +9,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Text},
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Row, Table},
     Frame,
 };
 
@@ -45,13 +45,21 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .split(area);
 
     let stats = vec![
-        ListItem::new(stat_entry_to_span("time: ", &app.stats.time)),
-        ListItem::new(stat_entry_to_span("mo3: ", &app.stats.mean_of_3)),
-        ListItem::new(stat_entry_to_span("avg5: ", &app.stats.avg_of_5)),
-        ListItem::new(stat_entry_to_span("avg12: ", &app.stats.avg_of_12)),
+        stat_entry_to_row("time: ", &app.stats.time),
+        stat_entry_to_row("mo3: ", &app.stats.mean_of_3),
+        stat_entry_to_row("avg5: ", &app.stats.avg_of_5),
+        stat_entry_to_row("avg12: ", &app.stats.avg_of_12),
     ];
 
-    let stats = List::new(stats).block(Block::default().borders(Borders::ALL));
+    let stats = Table::new(stats)
+        .header(Row::new(vec!["      ", "Current", "Best"]))
+        .column_spacing(2)
+        .widths(&[
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+        ])
+        .block(Block::default().borders(Borders::ALL));
 
     f.render_widget(stats, chunks[0]);
 
