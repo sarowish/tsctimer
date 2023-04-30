@@ -56,7 +56,7 @@ fn get_mean(times: &[u128], mean_of: usize) -> Option<u128> {
     get_times_from_tail(times, mean_of).map(|times| times.iter().sum::<u128>() / 3)
 }
 
-fn get_avg(times: &[u128], avg_of: usize) -> Option<u128> {
+pub fn get_avg(times: &[u128], avg_of: usize) -> Option<u128> {
     let Some(times) = get_times_from_tail(times, avg_of) else {
         return None;
     };

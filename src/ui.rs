@@ -9,7 +9,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Text},
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph, Row, Table},
+    widgets::{Block, Borders, Paragraph, Row, Table, TableState},
     Frame,
 };
 
@@ -75,23 +75,39 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .enumerate()
         .rev()
         .map(|(idx, solve)| {
-            format!(
-                "{}. {}",
-                idx + 1,
-                millis_to_string_not_running(solve.time.as_millis())
-            )
+            vec![
+                Span::raw(format!("{}.", idx + 1)),
+                Span::raw(millis_to_string_not_running(solve.time.as_millis())),
+                Span::raw(
+                    solve
+                        .avg_of_5
+                        .map_or("-".to_string(), millis_to_string_not_running),
+                ),
+                Span::raw(
+                    solve
+                        .avg_of_12
+                        .map_or("-".to_string(), millis_to_string_not_running),
+                ),
+            ]
         })
-        .map(Span::raw)
-        .map(ListItem::new)
-        .collect::<Vec<ListItem>>();
+        .map(Row::new)
+        .collect::<Vec<Row>>();
 
-    let mut state = ListState::default();
+    let mut state = TableState::default();
 
     if !solves.is_empty() {
         state.select(Some(solves.len() - 1));
     }
 
-    let solves = List::new(solves).block(Block::default().borders(Borders::ALL));
+    let solves = Table::new(solves)
+        .header(Row::new(vec![" ", "time", "ao5", "ao12"]))
+        .widths(&[
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+        ])
+        .block(Block::default().borders(Borders::ALL));
 
     f.render_stateful_widget(solves, chunks[1], &mut state);
 }
