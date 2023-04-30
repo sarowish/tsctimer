@@ -64,7 +64,14 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
             Constraint::Percentage(33),
             Constraint::Percentage(33),
         ])
-        .block(Block::default().borders(Borders::ALL));
+        .block(
+            Block::default().borders(Borders::ALL).title(Span::styled(
+                "Stats",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )),
+        );
 
     f.render_widget(stats, chunks[0]);
 
@@ -107,13 +114,25 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
             Constraint::Percentage(25),
             Constraint::Percentage(25),
         ])
-        .block(Block::default().borders(Borders::ALL));
+        .block(
+            Block::default().borders(Borders::ALL).title(Span::styled(
+                "Solves",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )),
+        );
 
     f.render_stateful_widget(solves, chunks[1], &mut state);
 }
 
 fn render_scramble<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
-    let block = Block::default().borders(Borders::ALL);
+    let block = Block::default().borders(Borders::ALL).title(Span::styled(
+        "Scramble",
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD),
+    ));
     f.render_widget(block, area);
 
     let scramble = app.scramble.to_string();
