@@ -75,6 +75,12 @@ impl App {
         self.inspection.start();
     }
 
+    pub fn cancel_timer(&mut self) {
+        self.timer.reset();
+        self.inspection.stop();
+        self.state = AppState::Idle;
+    }
+
     pub fn toggle_inspection(&mut self) {
         self.inspection_enabled = !self.inspection_enabled;
     }

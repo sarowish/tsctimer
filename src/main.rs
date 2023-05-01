@@ -65,6 +65,7 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = crossterm::event::read()? {
                 match key.code {
+                    KeyCode::Esc => app.cancel_timer(),
                     KeyCode::Char('q') => break,
                     KeyCode::Char('r') => app.generate_scramble(),
                     KeyCode::Char('i') => app.toggle_inspection(),
