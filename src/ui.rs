@@ -1,6 +1,6 @@
 use crate::{
-    app::{self, App, AppState},
-    scramble::Scramble,
+    app::{App, AppState},
+    cube::Face,
     stats::stat_entry_to_row,
     timer::millis_to_string_not_running,
 };
@@ -8,7 +8,7 @@ use ratatui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Text},
+    text::{Span, Spans, Text},
     widgets::{Block, Borders, Paragraph, Row, Table, TableState},
     Frame,
 };
@@ -30,12 +30,19 @@ pub fn render<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     render_left_pane(f, app, chunks[0]);
 
     chunks = Layout::default()
-        .constraints([Constraint::Max(3), Constraint::Min(3)].as_ref())
+        .constraints([Constraint::Max(3), Constraint::Min(3), Constraint::Max(13)].as_ref())
         .direction(Direction::Vertical)
         .split(chunks[1]);
 
     render_scramble(f, app, chunks[0]);
     render_timer(f, app, chunks[1]);
+
+    chunks = Layout::default()
+        .constraints([Constraint::Min(1), Constraint::Min(1), Constraint::Max(29)])
+        .direction(Direction::Horizontal)
+        .split(chunks[2]);
+
+    render_cube(f, app, chunks[2]);
 }
 
 fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
@@ -174,7 +181,7 @@ fn render_inspection<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         app.inspection.stop();
         app.inspection.expired = true;
         app.state = AppState::Idle;
-        app.scramble = Scramble::new(app::SCRAMBLE_LENGTH);
+        app.generate_scramble();
         return;
     };
 
@@ -193,6 +200,58 @@ fn render_inspection<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     .alignment(Alignment::Center);
 
     f.render_widget(time_text, area);
+}
+
+impl From<&Face> for Span<'_> {
+    fn from(face: &Face) -> Self {
+        let color: Color = (*face).into();
+
+        Span::styled("██", Style::default().fg(color))
+    }
+}
+
+fn render_cube<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+    let mut grid = (0..11)
+        .map(|_| vec![Span::raw(" "); 15])
+        .collect::<Vec<Vec<Span>>>();
+
+    for i in 0..3 {
+        grid[i][7] = Span::from(&app.cube_preview.facelets[i * 3]);
+        grid[i][8] = Span::from(&app.cube_preview.facelets[i * 3 + 1]);
+        grid[i][9] = Span::from(&app.cube_preview.facelets[i * 3 + 2]);
+
+        grid[i + 4][0] = Span::from(&app.cube_preview.facelets[i * 3 + 9]);
+        grid[i + 4][1] = Span::from(&app.cube_preview.facelets[i * 3 + 10]);
+        grid[i + 4][2] = Span::from(&app.cube_preview.facelets[i * 3 + 11]);
+
+        grid[i + 4][4] = Span::from(&app.cube_preview.facelets[i * 3 + 18]);
+        grid[i + 4][5] = Span::from(&app.cube_preview.facelets[i * 3 + 19]);
+        grid[i + 4][6] = Span::from(&app.cube_preview.facelets[i * 3 + 20]);
+
+        grid[i + 4][8] = Span::from(&app.cube_preview.facelets[i * 3 + 27]);
+        grid[i + 4][9] = Span::from(&app.cube_preview.facelets[i * 3 + 28]);
+        grid[i + 4][10] = Span::from(&app.cube_preview.facelets[i * 3 + 29]);
+
+        grid[i + 4][12] = Span::from(&app.cube_preview.facelets[i * 3 + 36]);
+        grid[i + 4][13] = Span::from(&app.cube_preview.facelets[i * 3 + 37]);
+        grid[i + 4][14] = Span::from(&app.cube_preview.facelets[i * 3 + 38]);
+
+        grid[i + 8][7] = Span::from(&app.cube_preview.facelets[i * 3 + 45]);
+        grid[i + 8][8] = Span::from(&app.cube_preview.facelets[i * 3 + 46]);
+        grid[i + 8][9] = Span::from(&app.cube_preview.facelets[i * 3 + 47]);
+    }
+
+    let grid = grid.into_iter().map(Spans::from).collect::<Vec<Spans>>();
+    let text = Paragraph::new(grid).block(
+        Block::default().borders(Borders::ALL).title(Span::styled(
+            "Scramble Preview",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )),
+    );
+
+    f.render_widget(text, area);
 }
 
 fn center_vertically(text: &str, area: Rect) -> Rect {

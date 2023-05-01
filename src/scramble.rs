@@ -1,46 +1,7 @@
+use crate::cube::{Face, Move, Rotation};
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use std::fmt::Display;
-
-#[derive(PartialEq, Clone)]
-enum Face {
-    Up,
-    Down,
-    Front,
-    Back,
-    Right,
-    Left,
-}
-
-impl Face {
-    fn opposite_face(&self) -> Self {
-        match self {
-            Face::Up => Face::Down,
-            Face::Down => Face::Up,
-            Face::Front => Face::Back,
-            Face::Back => Face::Front,
-            Face::Right => Face::Left,
-            Face::Left => Face::Right,
-        }
-    }
-}
-
-impl Display for Face {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Face::Up => "U",
-                Face::Down => "D",
-                Face::Front => "F",
-                Face::Back => "B",
-                Face::Right => "R",
-                Face::Left => "L",
-            }
-        )
-    }
-}
 
 impl Distribution<Face> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Face {
@@ -55,27 +16,6 @@ impl Distribution<Face> for Standard {
     }
 }
 
-#[derive(PartialEq, Clone)]
-enum Rotation {
-    Clockwise,
-    CounterClockwise,
-    DoubleTurn,
-}
-
-impl Display for Rotation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Rotation::Clockwise => "",
-                Rotation::CounterClockwise => "'",
-                Rotation::DoubleTurn => "2",
-            }
-        )
-    }
-}
-
 impl Distribution<Rotation> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Rotation {
         match rng.gen_range(0..=2) {
@@ -83,27 +23,6 @@ impl Distribution<Rotation> for Standard {
             1 => Rotation::CounterClockwise,
             _ => Rotation::DoubleTurn,
         }
-    }
-}
-
-#[derive(PartialEq, Clone)]
-pub struct Move {
-    face: Face,
-    rotation: Rotation,
-}
-
-impl Move {
-    fn new() -> Self {
-        let face: Face = rand::random();
-        let rotation: Rotation = rand::random();
-
-        Self { face, rotation }
-    }
-}
-
-impl Display for Move {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}{}", self.face, self.rotation)
     }
 }
 

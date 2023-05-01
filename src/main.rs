@@ -1,4 +1,5 @@
 mod app;
+mod cube;
 mod inspection;
 mod scramble;
 mod stats;
@@ -16,7 +17,6 @@ use crossterm::terminal::{
 };
 use ratatui::backend::{Backend, CrosstermBackend};
 use ratatui::Terminal;
-use scramble::Scramble;
 use std::io;
 use std::panic;
 use std::time::Duration;
@@ -66,7 +66,7 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
             if let Event::Key(key) = crossterm::event::read()? {
                 match key.code {
                     KeyCode::Char('q') => break,
-                    KeyCode::Char('r') => app.scramble = Scramble::new(app::SCRAMBLE_LENGTH),
+                    KeyCode::Char('r') => app.generate_scramble(),
                     KeyCode::Char('i') => app.toggle_inspection(),
                     KeyCode::Char(' ') => match app.state {
                         AppState::Idle if !app.inspection.expired => {

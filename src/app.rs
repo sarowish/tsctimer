@@ -1,4 +1,5 @@
 use crate::{
+    cube::Cube,
     inspection::Inspection,
     scramble::Scramble,
     stats::{get_avg, Stats},
@@ -21,20 +22,39 @@ pub struct App {
     pub scramble: Scramble,
     pub solves: Vec<Solve>,
     pub stats: Stats,
+    pub cube_preview: Cube,
     pub state: AppState,
     pub inspection_enabled: bool,
 }
 
 impl App {
     pub fn new() -> Self {
-        Self {
+        let mut app = Self {
             timer: Timer::new(),
             inspection: Inspection::new(),
             scramble: Scramble::new(SCRAMBLE_LENGTH),
             solves: Vec::new(),
             stats: Stats::default(),
+            cube_preview: Cube::new(),
             state: AppState::Idle,
             inspection_enabled: true,
+        };
+
+        app.generate_scramble_preview();
+
+        app
+    }
+
+    pub fn generate_scramble(&mut self) {
+        self.scramble = Scramble::new(SCRAMBLE_LENGTH);
+        self.generate_scramble_preview();
+    }
+
+    pub fn generate_scramble_preview(&mut self) {
+        self.cube_preview = Cube::new();
+
+        for r#move in &self.scramble.moves {
+            self.cube_preview.apply_move(r#move);
         }
     }
 
@@ -48,6 +68,7 @@ impl App {
         self.state = AppState::Idle;
         self.add_solve();
         self.stats.update(&self.solves);
+        self.generate_scramble_preview()
     }
 
     pub fn start_inspecting(&mut self) {
