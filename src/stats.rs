@@ -9,7 +9,7 @@ use ratatui::{
 pub struct StatEntry(pub Option<u128>, pub Option<u128>);
 
 impl StatEntry {
-    fn update(&mut self, new: Option<u128>) {
+    pub fn update(&mut self, new: Option<u128>) {
         if let Some(new) = new {
             self.0 = Some(new);
             self.1 = if let Some(time) = self.1 {
@@ -32,7 +32,7 @@ pub struct Stats {
 }
 
 impl Stats {
-    pub fn update(&mut self, solves: &[Solve]) {
+    pub fn update_on_new(&mut self, solves: &[Solve]) {
         let times = solves
             .iter()
             .map(|solve| solve.time.as_millis())
@@ -49,6 +49,59 @@ impl Stats {
             / (self.solve_count + 1);
 
         self.solve_count += 1;
+    }
+
+    pub fn update_on_delete(&mut self, deleted_solve: Solve, solves: &[Solve]) {
+        self.time.0 = solves.last().map(|solve| solve.time.as_millis());
+
+        if matches!(self.time.1, Some(pb) if pb == deleted_solve.time.as_millis()) {
+            self.time.1 = solves.iter().map(|solve| solve.time.as_millis()).min();
+        }
+
+        let times = solves
+            .iter()
+            .map(|solve| solve.time.as_millis())
+            .collect::<Vec<u128>>();
+
+        self.mean_of_3 = StatEntry(
+            get_mean(&times, 3),
+            times.windows(3).map(|w| get_mean(w, 3).unwrap()).min(),
+        );
+
+        self.global_mean = (self.global_mean * self.solve_count - deleted_solve.time.as_millis())
+            .checked_div(self.solve_count - 1)
+            .unwrap_or_default();
+
+        self.solve_count -= 1;
+
+        let Some(avg_of_5) = deleted_solve.avg_of_5 else { return ; };
+
+        if matches!(self.avg_of_5.1, Some(pb) if pb == avg_of_5) {
+            self.avg_of_5 = StatEntry(
+                solves
+                    .last()
+                    .map(|solve| solve.avg_of_5)
+                    .unwrap_or_default(),
+                solves
+                    .iter()
+                    .map(|solve| solve.avg_of_5)
+                    .filter(|solve| solve.is_some())
+                    .min()
+                    .unwrap_or_default(),
+            );
+        }
+
+        let Some(avg_of_12) = deleted_solve.avg_of_12 else { return ; };
+
+        if matches!(self.avg_of_12.1, Some(pb) if pb == avg_of_12) {
+            self.avg_of_12 = StatEntry(
+                solves
+                    .last()
+                    .map(|solve| solve.avg_of_12)
+                    .unwrap_or_default(),
+                solves.iter().filter_map(|solve| solve.avg_of_12).min(),
+            );
+        }
     }
 }
 

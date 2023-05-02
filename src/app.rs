@@ -67,7 +67,7 @@ impl App {
         self.timer.stop();
         self.state = AppState::Idle;
         self.add_solve();
-        self.stats.update(&self.solves);
+        self.stats.update_on_new(&self.solves);
         self.generate_scramble_preview()
     }
 
@@ -101,6 +101,11 @@ impl App {
         );
 
         self.solves.push(solve);
+    }
+
+    pub fn delete_last_solve(&mut self) {
+        let Some(solve) = self.solves.pop() else { return; };
+        self.stats.update_on_delete(solve, &self.solves)
     }
 }
 
