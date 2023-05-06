@@ -9,7 +9,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans, Text},
-    widgets::{Block, Borders, Paragraph, Row, Table, TableState},
+    widgets::{Block, Borders, Paragraph, Row, Table},
     Frame,
 };
 
@@ -85,7 +85,6 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     let solves = app
         .solves
         .iter()
-        .rev()
         .enumerate()
         .rev()
         .map(|(idx, solve)| {
@@ -107,12 +106,6 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .map(Row::new)
         .collect::<Vec<Row>>();
 
-    let mut state = TableState::default();
-
-    if !solves.is_empty() {
-        state.select(Some(solves.len() - 1));
-    }
-
     let solves = Table::new(solves)
         .header(Row::new(vec![" ", "time", "ao5", "ao12"]))
         .widths(&[
@@ -130,7 +123,7 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
             )),
         );
 
-    f.render_stateful_widget(solves, chunks[1], &mut state);
+    f.render_widget(solves, chunks[1]);
 }
 
 fn render_scramble<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
