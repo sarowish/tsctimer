@@ -52,14 +52,14 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .split(area);
 
     let stats = vec![
-        stat_line_to_row("time:", &app.stats.time),
-        stat_line_to_row("mo3:", &app.stats.mean_of_3),
-        stat_line_to_row("avg5:", &app.stats.avg_of_5),
-        stat_line_to_row("avg12:", &app.stats.avg_of_12),
+        stat_line_to_row("time:", &app.get_stats().time),
+        stat_line_to_row("mo3:", &app.get_stats().mean_of_3),
+        stat_line_to_row("avg5:", &app.get_stats().avg_of_5),
+        stat_line_to_row("avg12:", &app.get_stats().avg_of_12),
         Row::new(vec![Span::raw("")]),
         Row::new(vec![
             Span::raw("session mean:"),
-            Span::raw(millis_to_string_not_running(app.stats.global_mean)),
+            Span::raw(millis_to_string_not_running(app.get_stats().global_mean)),
         ]),
     ];
 
@@ -73,7 +73,7 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         ])
         .block(
             Block::default().borders(Borders::ALL).title(Span::styled(
-                "Stats",
+                format!("Stats [Session {}]", app.selected_session_idx + 1),
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),
@@ -83,7 +83,7 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     f.render_widget(stats, chunks[0]);
 
     let solves = app
-        .solves
+        .get_solves()
         .iter()
         .enumerate()
         .rev()

@@ -20,8 +20,8 @@ pub struct App {
     pub timer: Timer,
     pub inspection: Inspection,
     pub scramble: Scramble,
-    pub solves: Vec<Solve>,
-    pub stats: Stats,
+    pub sessions: Vec<Session>,
+    pub selected_session_idx: usize,
     pub cube_preview: Cube,
     pub state: AppState,
     pub inspection_enabled: bool,
@@ -33,8 +33,8 @@ impl App {
             timer: Timer::new(),
             inspection: Inspection::new(),
             scramble: Scramble::new(SCRAMBLE_LENGTH),
-            solves: Vec::new(),
-            stats: Stats::default(),
+            sessions: vec![Session::default()],
+            selected_session_idx: 0,
             cube_preview: Cube::new(),
             state: AppState::Idle,
             inspection_enabled: true,
@@ -43,6 +43,38 @@ impl App {
         app.generate_scramble_preview();
 
         app
+    }
+
+    pub fn next_session(&mut self) {
+        self.selected_session_idx += 1;
+
+        if self.selected_session_idx == self.sessions.len() {
+            self.sessions.push(Session::default())
+        }
+    }
+
+    pub fn previous_session(&mut self) {
+        self.selected_session_idx = self.selected_session_idx.saturating_sub(1);
+    }
+
+    fn get_selected_session(&self) -> &Session {
+        &self.sessions[self.selected_session_idx]
+    }
+
+    fn get_mut_selected_session(&mut self) -> &mut Session {
+        &mut self.sessions[self.selected_session_idx]
+    }
+
+    pub fn get_solves(&self) -> &Vec<Solve> {
+        &self.get_selected_session().solves
+    }
+
+    pub fn get_mut_solves(&mut self) -> &mut Vec<Solve> {
+        &mut self.get_mut_selected_session().solves
+    }
+
+    pub fn get_stats(&self) -> &Stats {
+        &self.get_selected_session().stats
     }
 
     pub fn generate_scramble(&mut self) {
@@ -67,7 +99,7 @@ impl App {
         self.timer.stop();
         self.state = AppState::Idle;
         self.add_solve();
-        self.stats.update_on_new(&self.solves);
+        self.get_mut_selected_session().update_stats_on_new();
         self.generate_scramble_preview()
     }
 
@@ -93,24 +125,24 @@ impl App {
             std::mem::replace(&mut self.scramble, Scramble::new(SCRAMBLE_LENGTH)),
         );
 
-        self.solves.push(solve);
+        self.get_mut_solves().push(solve);
 
-        let avg_of_5 = get_avg(&self.solves, 5);
-        let avg_of_12 = get_avg(&self.solves, 12);
+        let avg_of_5 = get_avg(self.get_solves(), 5);
+        let avg_of_12 = get_avg(self.get_solves(), 12);
 
-        let solve = self.solves.last_mut().unwrap();
+        let solve = self.get_mut_solves().last_mut().unwrap();
 
         solve.avg_of_5 = avg_of_5;
         solve.avg_of_12 = avg_of_12;
     }
 
     pub fn delete_last_solve(&mut self) {
-        let Some(solve) = self.solves.pop() else { return; };
-        self.stats.update(&solve, &self.solves)
+        let Some(solve) = self.get_mut_solves().pop() else { return; };
+        self.get_mut_selected_session().update_stats(&solve)
     }
 
     pub fn toggle_plus_two(&mut self) {
-        let Some(solve) = self.solves.last_mut() else { return; };
+        let Some(solve) = self.get_mut_solves().last_mut() else { return; };
         let prev = solve.clone();
 
         if matches!(solve.time.penalty, Penalty::PlusTwo) {
@@ -121,19 +153,19 @@ impl App {
             solve.time.time += 2000;
         }
 
-        let avg_of_5 = get_avg(&self.solves, 5);
-        let avg_of_12 = get_avg(&self.solves, 12);
+        let avg_of_5 = get_avg(self.get_solves(), 5);
+        let avg_of_12 = get_avg(self.get_solves(), 12);
 
-        let solve = self.solves.last_mut().unwrap();
+        let solve = self.get_mut_solves().last_mut().unwrap();
 
         solve.avg_of_5 = avg_of_5;
         solve.avg_of_12 = avg_of_12;
 
-        self.stats.update(&prev, &self.solves);
+        self.get_mut_selected_session().update_stats(&prev);
     }
 
     pub fn toggle_dnf(&mut self) {
-        let Some(solve) = self.solves.last_mut() else { return; };
+        let Some(solve) = self.get_mut_solves().last_mut() else { return; };
         let prev = solve.clone();
 
         solve.time.penalty = match solve.time.penalty {
@@ -145,15 +177,31 @@ impl App {
             Penalty::Dnf => Penalty::Ok,
         };
 
-        let avg_of_5 = get_avg(&self.solves, 5);
-        let avg_of_12 = get_avg(&self.solves, 12);
+        let avg_of_5 = get_avg(self.get_solves(), 5);
+        let avg_of_12 = get_avg(self.get_solves(), 12);
 
-        let solve = self.solves.last_mut().unwrap();
+        let solve = self.get_mut_solves().last_mut().unwrap();
 
         solve.avg_of_5 = avg_of_5;
         solve.avg_of_12 = avg_of_12;
 
-        self.stats.update(&prev, &self.solves);
+        self.get_mut_selected_session().update_stats(&prev);
+    }
+}
+
+#[derive(Default)]
+pub struct Session {
+    solves: Vec<Solve>,
+    stats: Stats,
+}
+
+impl Session {
+    fn update_stats_on_new(&mut self) {
+        self.stats.update_on_new(&self.solves);
+    }
+
+    fn update_stats(&mut self, relevant_solve: &Solve) {
+        self.stats.update(relevant_solve, &self.solves);
     }
 }
 
