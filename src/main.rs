@@ -70,6 +70,8 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
                     KeyCode::Char('r') => app.generate_scramble(),
                     KeyCode::Char('i') => app.toggle_inspection(),
                     KeyCode::Char('d') => app.delete_last_solve(),
+                    KeyCode::Char('p') => app.toggle_plus_two(),
+                    KeyCode::Char('D') => app.toggle_dnf(),
                     KeyCode::Char(' ') => match app.state {
                         AppState::Idle if !app.inspection.expired => {
                             if app.inspection_enabled && !app.inspection.is_running() {

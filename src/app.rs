@@ -2,7 +2,7 @@ use crate::{
     cube::Cube,
     inspection::Inspection,
     scramble::Scramble,
-    stats::{get_avg, Stats},
+    stats::{get_avg, StatEntry, Stats},
     timer::Timer,
 };
 use std::time::Duration;
@@ -86,45 +86,101 @@ impl App {
     }
 
     fn add_solve(&mut self) {
-        let mut times = self
-            .solves
-            .iter()
-            .map(|solve| solve.time.as_millis())
-            .collect::<Vec<u128>>();
-        times.push(self.timer.result.as_millis());
-
         let solve = Solve::new(
             self.timer.result,
-            get_avg(&times, 5),
-            get_avg(&times, 12),
+            None,
+            None,
             std::mem::replace(&mut self.scramble, Scramble::new(SCRAMBLE_LENGTH)),
         );
 
         self.solves.push(solve);
+
+        let avg_of_5 = get_avg(&self.solves, 5);
+        let avg_of_12 = get_avg(&self.solves, 12);
+
+        let solve = self.solves.last_mut().unwrap();
+
+        solve.avg_of_5 = avg_of_5;
+        solve.avg_of_12 = avg_of_12;
     }
 
     pub fn delete_last_solve(&mut self) {
         let Some(solve) = self.solves.pop() else { return; };
-        self.stats.update_on_delete(solve, &self.solves)
+        self.stats.update(&solve, &self.solves)
+    }
+
+    pub fn toggle_plus_two(&mut self) {
+        let Some(solve) = self.solves.last_mut() else { return; };
+        let prev = solve.clone();
+
+        if matches!(solve.time.penalty, Penalty::PlusTwo) {
+            solve.time.penalty = Penalty::Ok;
+            solve.time.time -= 2000;
+        } else {
+            solve.time.penalty = Penalty::PlusTwo;
+            solve.time.time += 2000;
+        }
+
+        let avg_of_5 = get_avg(&self.solves, 5);
+        let avg_of_12 = get_avg(&self.solves, 12);
+
+        let solve = self.solves.last_mut().unwrap();
+
+        solve.avg_of_5 = avg_of_5;
+        solve.avg_of_12 = avg_of_12;
+
+        self.stats.update(&prev, &self.solves);
+    }
+
+    pub fn toggle_dnf(&mut self) {
+        let Some(solve) = self.solves.last_mut() else { return; };
+        let prev = solve.clone();
+
+        solve.time.penalty = match solve.time.penalty {
+            Penalty::Ok => Penalty::Dnf,
+            Penalty::PlusTwo => {
+                solve.time.time -= 2000;
+                Penalty::Dnf
+            }
+            Penalty::Dnf => Penalty::Ok,
+        };
+
+        let avg_of_5 = get_avg(&self.solves, 5);
+        let avg_of_12 = get_avg(&self.solves, 12);
+
+        let solve = self.solves.last_mut().unwrap();
+
+        solve.avg_of_5 = avg_of_5;
+        solve.avg_of_12 = avg_of_12;
+
+        self.stats.update(&prev, &self.solves);
     }
 }
 
+#[derive(Clone, Copy)]
+pub enum Penalty {
+    Ok,
+    PlusTwo,
+    Dnf,
+}
+
+#[derive(Clone)]
 pub struct Solve {
-    pub time: Duration,
-    pub avg_of_5: Option<u128>,
-    pub avg_of_12: Option<u128>,
+    pub time: StatEntry,
+    pub avg_of_5: Option<StatEntry>,
+    pub avg_of_12: Option<StatEntry>,
     scramble: Scramble,
 }
 
 impl Solve {
     fn new(
         time: Duration,
-        avg_of_5: Option<u128>,
-        avg_of_12: Option<u128>,
+        avg_of_5: Option<StatEntry>,
+        avg_of_12: Option<StatEntry>,
         scramble: Scramble,
     ) -> Self {
         Self {
-            time,
+            time: StatEntry::new(time.as_millis(), Penalty::Ok),
             avg_of_5,
             avg_of_12,
             scramble,

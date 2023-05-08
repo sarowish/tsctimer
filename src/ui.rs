@@ -1,7 +1,7 @@
 use crate::{
     app::{App, AppState},
     cube::Face,
-    stats::stat_entry_to_row,
+    stats::stat_line_to_row,
     timer::millis_to_string_not_running,
 };
 use ratatui::{
@@ -52,10 +52,10 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .split(area);
 
     let stats = vec![
-        stat_entry_to_row("time:", &app.stats.time),
-        stat_entry_to_row("mo3:", &app.stats.mean_of_3),
-        stat_entry_to_row("avg5:", &app.stats.avg_of_5),
-        stat_entry_to_row("avg12:", &app.stats.avg_of_12),
+        stat_line_to_row("time:", &app.stats.time),
+        stat_line_to_row("mo3:", &app.stats.mean_of_3),
+        stat_line_to_row("avg5:", &app.stats.avg_of_5),
+        stat_line_to_row("avg12:", &app.stats.avg_of_12),
         Row::new(vec![Span::raw("")]),
         Row::new(vec![
             Span::raw("session mean:"),
@@ -90,16 +90,16 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .map(|(idx, solve)| {
             vec![
                 Span::raw(format!("{}.", idx + 1)),
-                Span::raw(millis_to_string_not_running(solve.time.as_millis())),
+                Span::raw(solve.time.to_string()),
                 Span::raw(
                     solve
                         .avg_of_5
-                        .map_or("-".to_string(), millis_to_string_not_running),
+                        .map_or("-".to_string(), |stat| stat.to_string()),
                 ),
                 Span::raw(
                     solve
                         .avg_of_12
-                        .map_or("-".to_string(), millis_to_string_not_running),
+                        .map_or("-".to_string(), |stat| stat.to_string()),
                 ),
             ]
         })

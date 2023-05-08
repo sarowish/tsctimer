@@ -26,6 +26,7 @@ impl Distribution<Rotation> for Standard {
     }
 }
 
+#[derive(Clone)]
 pub struct Scramble {
     pub moves: Vec<Move>,
 }
