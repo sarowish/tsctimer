@@ -93,12 +93,9 @@ pub struct Stats {
 }
 
 impl Stats {
-    pub fn update(&mut self, relevant_solve: &Solve, solves: &[Solve]) {
+    pub fn update(&mut self, solves: &[Solve]) {
         self.time.current = solves.last().map(|solve| solve.time);
-
-        if matches!(self.time.best, Some(pb) if pb == relevant_solve.time) {
-            self.time.best = solves.iter().map(|solve| solve.time).min();
-        }
+        self.time.best = solves.iter().map(|solve| solve.time).min();
 
         self.mean_of_3 = StatLine::new(
             get_mean(solves, 3),
@@ -114,10 +111,6 @@ impl Stats {
             .checked_div(self.solve_count)
             .unwrap_or_default();
 
-        if relevant_solve.avg_of_5.is_none() {
-            return;
-        }
-
         self.avg_of_5 = StatLine::new(
             solves
                 .last()
@@ -125,10 +118,6 @@ impl Stats {
                 .unwrap_or_default(),
             solves.iter().filter_map(|solve| solve.avg_of_5).min(),
         );
-
-        if relevant_solve.avg_of_12.is_none() {
-            return;
-        }
 
         self.avg_of_12 = StatLine::new(
             solves

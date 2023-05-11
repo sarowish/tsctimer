@@ -41,6 +41,20 @@ impl Display for Face {
     }
 }
 
+impl From<char> for Face {
+    fn from(value: char) -> Self {
+        match value {
+            'U' => Face::Up,
+            'D' => Face::Down,
+            'F' => Face::Front,
+            'B' => Face::Back,
+            'R' => Face::Right,
+            'L' => Face::Left,
+            _ => panic!(),
+        }
+    }
+}
+
 impl From<Face> for Color {
     fn from(value: Face) -> Self {
         match value {
@@ -75,6 +89,17 @@ impl Display for Rotation {
     }
 }
 
+impl From<char> for Rotation {
+    fn from(value: char) -> Self {
+        match value {
+            '\0' => Rotation::Clockwise,
+            '\'' => Rotation::CounterClockwise,
+            '2' => Rotation::DoubleTurn,
+            _ => panic!(),
+        }
+    }
+}
+
 #[derive(PartialEq, Clone)]
 pub struct Move {
     pub face: Face,
@@ -87,6 +112,17 @@ impl Move {
         let rotation: Rotation = rand::random();
 
         Self { face, rotation }
+    }
+}
+
+impl From<&str> for Move {
+    fn from(value: &str) -> Self {
+        let mut chars = value.chars();
+
+        Self {
+            face: chars.next().unwrap().into(),
+            rotation: chars.next().unwrap_or_default().into(),
+        }
     }
 }
 

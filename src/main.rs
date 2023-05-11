@@ -1,5 +1,6 @@
 mod app;
 mod cube;
+mod history;
 mod inspection;
 mod scramble;
 mod stats;
@@ -69,9 +70,9 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
                     KeyCode::Char('q') => break,
                     KeyCode::Char('r') => app.generate_scramble(),
                     KeyCode::Char('i') => app.toggle_inspection(),
-                    KeyCode::Char('d') => app.delete_last_solve(),
-                    KeyCode::Char('p') => app.toggle_plus_two(),
-                    KeyCode::Char('D') => app.toggle_dnf(),
+                    KeyCode::Char('d') => app.delete_last_solve()?,
+                    KeyCode::Char('p') => app.toggle_plus_two()?,
+                    KeyCode::Char('D') => app.toggle_dnf()?,
                     KeyCode::Char('s') => app.next_session(),
                     KeyCode::Char('S') => app.previous_session(),
                     KeyCode::Char(' ') => match app.state {
@@ -84,7 +85,7 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
                         }
                         AppState::Ready => app.state = AppState::Set,
                         AppState::Solving => {
-                            app.stop_timer();
+                            app.stop_timer()?;
                         }
                         _ => (),
                     },

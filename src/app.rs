@@ -1,11 +1,13 @@
 use crate::{
     cube::Cube,
+    history,
     inspection::Inspection,
     scramble::Scramble,
     stats::{get_avg, StatEntry, Stats},
     timer::Timer,
 };
-use std::time::Duration;
+use anyhow::Result;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub const SCRAMBLE_LENGTH: u8 = 25;
 
@@ -33,7 +35,7 @@ impl App {
             timer: Timer::new(),
             inspection: Inspection::new(),
             scramble: Scramble::new(SCRAMBLE_LENGTH),
-            sessions: vec![Session::default()],
+            sessions: vec![],
             selected_session_idx: 0,
             cube_preview: Cube::new(),
             state: AppState::Idle,
@@ -41,6 +43,40 @@ impl App {
         };
 
         app.generate_scramble_preview();
+
+        for session_file in history::get_sessions_list().unwrap() {
+            let mut session = history::read_history(session_file).unwrap();
+
+            let mut start = 0;
+            let mut end = 4;
+
+            while session.solves.len() > end {
+                let slice = &session.solves[start..=end];
+                let avg_of_5 = get_avg(slice, 5);
+                session.solves[end].avg_of_5 = avg_of_5;
+                start += 1;
+                end += 1;
+            }
+
+            start = 0;
+            end = 11;
+
+            while session.solves.len() > end {
+                let slice = &session.solves[start..=end];
+                let avg_of_12 = get_avg(slice, 12);
+                session.solves[end].avg_of_12 = avg_of_12;
+                start += 1;
+                end += 1;
+            }
+
+            session.update_stats();
+
+            app.sessions.push(session);
+        }
+
+        if app.sessions.is_empty() {
+            app.sessions.push(Session::default());
+        }
 
         app
     }
@@ -95,12 +131,14 @@ impl App {
         self.state = AppState::Solving;
     }
 
-    pub fn stop_timer(&mut self) {
+    pub fn stop_timer(&mut self) -> Result<()> {
         self.timer.stop();
         self.state = AppState::Idle;
-        self.add_solve();
+        self.add_solve()?;
         self.get_mut_selected_session().update_stats_on_new();
-        self.generate_scramble_preview()
+        self.generate_scramble_preview();
+
+        Ok(())
     }
 
     pub fn start_inspecting(&mut self) {
@@ -117,13 +155,21 @@ impl App {
         self.inspection_enabled = !self.inspection_enabled;
     }
 
-    fn add_solve(&mut self) {
+    fn add_solve(&mut self) -> Result<()> {
         let solve = Solve::new(
             self.timer.result,
             None,
             None,
             std::mem::replace(&mut self.scramble, Scramble::new(SCRAMBLE_LENGTH)),
         );
+
+        history::add_to_history(
+            history::get_session_history_file(&format!(
+                "session_{}.csv",
+                self.selected_session_idx
+            ))?,
+            &solve,
+        )?;
 
         self.get_mut_solves().push(solve);
 
@@ -134,16 +180,20 @@ impl App {
 
         solve.avg_of_5 = avg_of_5;
         solve.avg_of_12 = avg_of_12;
+
+        Ok(())
     }
 
-    pub fn delete_last_solve(&mut self) {
-        let Some(solve) = self.get_mut_solves().pop() else { return; };
-        self.get_mut_selected_session().update_stats(&solve)
+    pub fn delete_last_solve(&mut self) -> Result<()> {
+        if self.get_mut_solves().pop().is_some() {
+            self.get_mut_selected_session().update_stats()
+        }
+
+        self.rewrite_history_file()
     }
 
-    pub fn toggle_plus_two(&mut self) {
-        let Some(solve) = self.get_mut_solves().last_mut() else { return; };
-        let prev = solve.clone();
+    pub fn toggle_plus_two(&mut self) -> Result<()> {
+        let Some(solve) = self.get_mut_solves().last_mut() else { return Ok(()); };
 
         if matches!(solve.time.penalty, Penalty::PlusTwo) {
             solve.time.penalty = Penalty::Ok;
@@ -161,12 +211,12 @@ impl App {
         solve.avg_of_5 = avg_of_5;
         solve.avg_of_12 = avg_of_12;
 
-        self.get_mut_selected_session().update_stats(&prev);
+        self.get_mut_selected_session().update_stats();
+        self.rewrite_history_file()
     }
 
-    pub fn toggle_dnf(&mut self) {
-        let Some(solve) = self.get_mut_solves().last_mut() else { return; };
-        let prev = solve.clone();
+    pub fn toggle_dnf(&mut self) -> Result<()> {
+        let Some(solve) = self.get_mut_solves().last_mut() else { return Ok(()); };
 
         solve.time.penalty = match solve.time.penalty {
             Penalty::Ok => Penalty::Dnf,
@@ -185,13 +235,24 @@ impl App {
         solve.avg_of_5 = avg_of_5;
         solve.avg_of_12 = avg_of_12;
 
-        self.get_mut_selected_session().update_stats(&prev);
+        self.get_mut_selected_session().update_stats();
+        self.rewrite_history_file()
+    }
+
+    fn rewrite_history_file(&self) -> Result<()> {
+        history::update_history(
+            history::get_session_history_file(&format!(
+                "session_{}.csv",
+                self.selected_session_idx
+            ))?,
+            self.get_solves(),
+        )
     }
 }
 
 #[derive(Default)]
 pub struct Session {
-    solves: Vec<Solve>,
+    pub solves: Vec<Solve>,
     stats: Stats,
 }
 
@@ -200,8 +261,8 @@ impl Session {
         self.stats.update_on_new(&self.solves);
     }
 
-    fn update_stats(&mut self, relevant_solve: &Solve) {
-        self.stats.update(relevant_solve, &self.solves);
+    fn update_stats(&mut self) {
+        self.stats.update(&self.solves);
     }
 }
 
@@ -212,12 +273,24 @@ pub enum Penalty {
     Dnf,
 }
 
+impl From<u8> for Penalty {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Self::Ok,
+            1 => Self::PlusTwo,
+            2 => Self::Dnf,
+            _ => panic!(),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Solve {
     pub time: StatEntry,
     pub avg_of_5: Option<StatEntry>,
     pub avg_of_12: Option<StatEntry>,
-    scramble: Scramble,
+    pub scramble: Scramble,
+    pub date: u64,
 }
 
 impl Solve {
@@ -232,6 +305,23 @@ impl Solve {
             avg_of_5,
             avg_of_12,
             scramble,
+            date: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+        }
+    }
+
+    pub fn from_history_file(time: u128, penalty: u8, scramble: &str, date: u64) -> Self {
+        let time = StatEntry::new(time, penalty.into());
+        let scramble: Scramble = scramble.into();
+
+        Self {
+            time,
+            avg_of_5: None,
+            avg_of_12: None,
+            scramble,
+            date,
         }
     }
 }

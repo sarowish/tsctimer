@@ -69,3 +69,15 @@ impl Display for Scramble {
         )
     }
 }
+
+impl From<&str> for Scramble {
+    fn from(value: &str) -> Self {
+        let mut moves = Vec::new();
+
+        for r#move in value.split_whitespace() {
+            moves.push(r#move.into());
+        }
+
+        Self { moves }
+    }
+}
