@@ -66,7 +66,13 @@ pub fn millis_to_string(time: u128, is_running: bool) -> String {
                 format!("{}.{:03}", seconds, millis)
             }
         }
-        _ => format!("{}:{}.{}", minutes, seconds, millis),
+        _ => {
+            if is_running {
+                format!("{}:{}.{}", minutes, seconds, millis / 100)
+            } else {
+                format!("{}:{}.{:03}", minutes, seconds, millis)
+            }
+        }
     }
 }
 
