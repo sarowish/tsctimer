@@ -27,6 +27,7 @@ pub struct App {
     pub cube_preview: Cube,
     pub state: AppState,
     pub inspection_enabled: bool,
+    pub ask_for_confirmation_true: bool,
 }
 
 impl App {
@@ -40,6 +41,7 @@ impl App {
             cube_preview: Cube::new(),
             state: AppState::Idle,
             inspection_enabled: true,
+            ask_for_confirmation_true: false,
         };
 
         app.generate_scramble_preview();
@@ -185,11 +187,17 @@ impl App {
     }
 
     pub fn delete_last_solve(&mut self) -> Result<()> {
-        if self.get_mut_solves().pop().is_some() {
-            self.get_mut_selected_session().update_stats()
-        }
+        if self.ask_for_confirmation_true {
+            if self.get_mut_solves().pop().is_some() {
+                self.get_mut_selected_session().update_stats()
+            }
 
-        self.rewrite_history_file()
+            self.ask_for_confirmation_true = false;
+            self.rewrite_history_file()
+        } else {
+            self.ask_for_confirmation_true = true;
+            Ok(())
+        }
     }
 
     pub fn toggle_plus_two(&mut self) -> Result<()> {

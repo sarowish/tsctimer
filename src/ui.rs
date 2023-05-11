@@ -9,7 +9,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Span, Spans, Text},
-    widgets::{Block, Borders, Paragraph, Row, Table},
+    widgets::{Block, Borders, Clear, Paragraph, Row, Table, Wrap},
     Frame,
 };
 
@@ -43,6 +43,10 @@ pub fn render<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .split(chunks[2]);
 
     render_cube(f, app, chunks[2]);
+
+    if app.ask_for_confirmation_true {
+        render_confirmation_window(f);
+    }
 }
 
 fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
@@ -245,6 +249,78 @@ fn render_cube<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     );
 
     f.render_widget(text, area);
+}
+
+fn render_confirmation_window<B: Backend>(f: &mut Frame<B>) {
+    let window = popup_window_from_percentage(50, 15, f.size());
+    f.render_widget(Clear, window);
+    f.render_widget(Block::default().borders(Borders::ALL), window);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(80), Constraint::Min(1)])
+        .margin(1)
+        .split(window);
+
+    let (yes_area, no_area) = {
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(chunks[1]);
+        (chunks[0], chunks[1])
+    };
+
+    let mut text = Paragraph::new(Spans::from(
+        "Are you sure you want to delete the latest solve?",
+    ))
+    .alignment(Alignment::Center);
+    // program crashes if width is 0 and wrap is enabled
+    if chunks[0].width > 0 {
+        text = text.wrap(Wrap { trim: true });
+    }
+
+    let yes = Paragraph::new(Spans::from(vec![
+        Span::styled("Y", Style::default().fg(Color::Green)),
+        Span::raw("es"),
+    ]))
+    .alignment(Alignment::Center);
+    let no = Paragraph::new(Spans::from(vec![
+        Span::styled("N", Style::default().fg(Color::Red)),
+        Span::raw("o"),
+    ]))
+    .alignment(Alignment::Center);
+
+    f.render_widget(text, chunks[0]);
+    f.render_widget(yes, yes_area);
+    f.render_widget(no, no_area);
+}
+
+fn popup_window_from_percentage(hor_percent: u16, ver_percent: u16, r: Rect) -> Rect {
+    let ver = [
+        Constraint::Percentage((100 - ver_percent) / 2),
+        Constraint::Percentage(ver_percent),
+        Constraint::Percentage((100 - ver_percent) / 2),
+    ];
+
+    let hor = [
+        Constraint::Percentage((100 - hor_percent) / 2),
+        Constraint::Percentage(hor_percent),
+        Constraint::Percentage((100 - hor_percent) / 2),
+    ];
+
+    popup_window(&hor, &ver, r)
+}
+
+fn popup_window(hor_constraints: &[Constraint], ver_constraints: &[Constraint], r: Rect) -> Rect {
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(ver_constraints)
+        .split(r);
+
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(hor_constraints)
+        .split(popup_layout[1])[1]
 }
 
 fn center_vertically(text: &str, area: Rect) -> Rect {

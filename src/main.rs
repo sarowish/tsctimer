@@ -65,31 +65,39 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = crossterm::event::read()? {
-                match key.code {
-                    KeyCode::Esc => app.cancel_timer(),
-                    KeyCode::Char('q') => break,
-                    KeyCode::Char('r') => app.generate_scramble(),
-                    KeyCode::Char('i') => app.toggle_inspection(),
-                    KeyCode::Char('d') => app.delete_last_solve()?,
-                    KeyCode::Char('p') => app.toggle_plus_two()?,
-                    KeyCode::Char('D') => app.toggle_dnf()?,
-                    KeyCode::Char('s') => app.next_session(),
-                    KeyCode::Char('S') => app.previous_session(),
-                    KeyCode::Char(' ') => match app.state {
-                        AppState::Idle if !app.inspection.expired => {
-                            if app.inspection_enabled && !app.inspection.is_running() {
-                                app.start_inspecting();
-                            }
-
-                            app.state = AppState::Ready;
-                        }
-                        AppState::Ready => app.state = AppState::Set,
-                        AppState::Solving => {
-                            app.stop_timer()?;
-                        }
+                if app.ask_for_confirmation_true {
+                    match key.code {
+                        KeyCode::Char('y') => app.delete_last_solve()?,
+                        KeyCode::Char('n') => app.ask_for_confirmation_true = false,
                         _ => (),
-                    },
-                    _ => (),
+                    }
+                } else {
+                    match key.code {
+                        KeyCode::Esc => app.cancel_timer(),
+                        KeyCode::Char('q') => break,
+                        KeyCode::Char('r') => app.generate_scramble(),
+                        KeyCode::Char('i') => app.toggle_inspection(),
+                        KeyCode::Char('d') => app.delete_last_solve()?,
+                        KeyCode::Char('p') => app.toggle_plus_two()?,
+                        KeyCode::Char('D') => app.toggle_dnf()?,
+                        KeyCode::Char('s') => app.next_session(),
+                        KeyCode::Char('S') => app.previous_session(),
+                        KeyCode::Char(' ') => match app.state {
+                            AppState::Idle if !app.inspection.expired => {
+                                if app.inspection_enabled && !app.inspection.is_running() {
+                                    app.start_inspecting();
+                                }
+
+                                app.state = AppState::Ready;
+                            }
+                            AppState::Ready => app.state = AppState::Set,
+                            AppState::Solving => {
+                                app.stop_timer()?;
+                            }
+                            _ => (),
+                        },
+                        _ => (),
+                    }
                 }
             }
             last_tick = Instant::now();
