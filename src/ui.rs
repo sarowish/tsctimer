@@ -268,6 +268,8 @@ fn generate_font(text: &str) -> String {
     for ch in text.chars() {
         if let Some(digit) = ch.to_digit(10) {
             convert_digit_to_font(digit, &mut result);
+        } else if ch == ':' {
+            colon_to_font(&mut result);
         } else {
             dot_to_font(&mut result);
         };
@@ -299,6 +301,19 @@ fn dot_to_font(result: &mut [String]) {
     for line in result.iter_mut().take(8) {
         line.push_str("     ");
     }
+    result[8].push_str("███  ");
+    result[9].push_str("███  ");
+}
+
+fn colon_to_font(result: &mut [String]) {
+    for line in result.iter_mut().take(4) {
+        line.push_str("     ");
+    }
+
+    result[4].push_str("███  ");
+    result[5].push_str("███  ");
+    result[6].push_str("     ");
+    result[7].push_str("     ");
     result[8].push_str("███  ");
     result[9].push_str("███  ");
 }
