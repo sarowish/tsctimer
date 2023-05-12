@@ -57,7 +57,10 @@ pub fn read_history(path: PathBuf) -> Result<Session> {
 }
 
 pub fn add_to_history(path: PathBuf, solve: &Solve) -> Result<()> {
-    let file = std::fs::OpenOptions::new().append(true).open(path)?;
+    let file = std::fs::OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(path)?;
 
     let mut wtr = csv::WriterBuilder::new()
         .has_headers(false)
