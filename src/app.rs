@@ -7,7 +7,10 @@ use crate::{
     timer::Timer,
 };
 use anyhow::Result;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{
+    cmp::Ordering,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 pub const SCRAMBLE_LENGTH: u8 = 25;
 
@@ -47,6 +50,16 @@ impl App {
         app.generate_scramble_preview();
 
         for session_file in history::get_sessions_list().unwrap() {
+            let idx = session_file
+                .file_stem()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .split_once('_')
+                .unwrap()
+                .1
+                .parse::<usize>()
+                .unwrap();
             let mut session = history::read_history(session_file).unwrap();
 
             let mut start = 0;
@@ -73,7 +86,16 @@ impl App {
 
             session.update_stats();
 
-            app.sessions.push(session);
+            match idx.cmp(&app.sessions.len()) {
+                Ordering::Less => app.sessions[idx] = session,
+                Ordering::Equal => app.sessions.push(session),
+                Ordering::Greater => {
+                    for _ in 0..(idx - app.sessions.len()) {
+                        app.sessions.push(Session::default())
+                    }
+                    app.sessions.push(session);
+                }
+            }
         }
 
         if app.sessions.is_empty() {
