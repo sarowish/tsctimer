@@ -22,27 +22,50 @@ pub fn render<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         return;
     }
 
+    let (left_pane_area, main_area) = if f.size().width > 140 {
+        let chunks = Layout::default()
+            .constraints([Constraint::Length(45), Constraint::Min(1)].as_ref())
+            .direction(Direction::Horizontal)
+            .split(f.size());
+
+        (Some(chunks[0]), chunks[1])
+    } else {
+        (None, f.size())
+    };
+
     let mut chunks = Layout::default()
-        .constraints([Constraint::Percentage(20), Constraint::Percentage(90)].as_ref())
-        .direction(Direction::Horizontal)
-        .split(f.size());
-
-    render_left_pane(f, app, chunks[0]);
-
-    chunks = Layout::default()
         .constraints([Constraint::Max(3), Constraint::Min(3), Constraint::Max(13)].as_ref())
         .direction(Direction::Vertical)
-        .split(chunks[1]);
+        .split(main_area);
 
     render_scramble(f, app, chunks[0]);
     render_timer(f, app, chunks[1]);
 
-    chunks = Layout::default()
-        .constraints([Constraint::Min(1), Constraint::Min(1), Constraint::Max(29)])
-        .direction(Direction::Horizontal)
-        .split(chunks[2]);
-
-    render_cube(f, app, chunks[2]);
+    if let Some(area) = left_pane_area {
+        render_left_pane(f, app, area);
+        chunks = Layout::default()
+            .constraints([
+                Constraint::Min(1),
+                Constraint::Min(1),
+                Constraint::Min(1),
+                Constraint::Length(29),
+            ])
+            .direction(Direction::Horizontal)
+            .split(chunks[2]);
+    } else {
+        chunks = Layout::default()
+            .constraints([
+                Constraint::Length(32),
+                Constraint::Length(40),
+                Constraint::Min(1),
+                Constraint::Length(29),
+            ])
+            .direction(Direction::Horizontal)
+            .split(chunks[2]);
+        render_stats(f, app, chunks[0]);
+        render_solves(f, app, chunks[1]);
+    }
+    render_cube(f, app, chunks[3]);
 
     if app.ask_for_confirmation_true {
         render_confirmation_window(f);
@@ -55,6 +78,11 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .direction(Direction::Vertical)
         .split(area);
 
+    render_stats(f, app, chunks[0]);
+    render_solves(f, app, chunks[1]);
+}
+
+fn render_stats<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     let stats = vec![
         stat_line_to_row("time:", &app.get_stats().time),
         stat_line_to_row("mo3:", &app.get_stats().mean_of_3),
@@ -62,7 +90,7 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         stat_line_to_row("avg12:", &app.get_stats().avg_of_12),
         Row::new(vec![Span::raw("")]),
         Row::new(vec![
-            Span::raw("session mean:"),
+            Span::raw("mean:"),
             Span::raw(millis_to_string_not_running(app.get_stats().global_mean)),
         ]),
     ];
@@ -84,8 +112,10 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
             )),
         );
 
-    f.render_widget(stats, chunks[0]);
+    f.render_widget(stats, area);
+}
 
+fn render_solves<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     let solves = app
         .get_solves()
         .iter()
@@ -127,7 +157,7 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
             )),
         );
 
-    f.render_widget(solves, chunks[1]);
+    f.render_widget(solves, area);
 }
 
 fn render_scramble<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
