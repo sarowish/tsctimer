@@ -10,3 +10,4 @@ rand = "0.8.5"
 ratatui = "0.20.1"
 csv = "1.2.1"
 dirs = "5.0.1"
+rodio = { version = "0.17.1", default-features = false }

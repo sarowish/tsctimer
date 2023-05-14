@@ -218,8 +218,8 @@ fn render_inspection<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     let time_text = Paragraph::new(Text::styled(
         time,
         Style::default().fg(match app.state {
-            AppState::Idle | AppState::Ready if remaining <= 4 => Color::Red,
-            AppState::Idle | AppState::Ready if remaining <= 8 => Color::Yellow,
+            AppState::Idle | AppState::Ready if remaining <= 3 => Color::Red,
+            AppState::Idle | AppState::Ready if remaining <= 7 => Color::Yellow,
             AppState::Set => Color::Green,
             _ => Color::White,
         }),
