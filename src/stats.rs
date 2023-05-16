@@ -142,6 +142,7 @@ impl Stats {
         self.global_mean = (self.global_mean * self.solve_count + solves.last().unwrap().time.time)
             / (self.solve_count + 1);
 
+        self.valid_solve_count += 1;
         self.solve_count += 1;
     }
 }
