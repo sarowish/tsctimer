@@ -40,7 +40,7 @@ fn main() -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
 
-    let mut app = App::new();
+    let mut app = App::new()?;
     let res = run_tui(&mut terminal, &mut app);
 
     reset_terminal()?;
@@ -89,8 +89,8 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
                         KeyCode::Char('p') => app.toggle_plus_two()?,
                         KeyCode::Char('D') => app.toggle_dnf()?,
                         KeyCode::Char('c') => app.delete_session()?,
-                        KeyCode::Char('s') => app.next_session(),
-                        KeyCode::Char('S') => app.previous_session(),
+                        KeyCode::Char('s') => app.next_session()?,
+                        KeyCode::Char('S') => app.previous_session()?,
                         KeyCode::Char(' ') => match app.state {
                             AppState::Idle if !app.inspection.expired => {
                                 if app.inspection_enabled && !app.inspection.is_running() {
