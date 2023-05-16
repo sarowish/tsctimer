@@ -59,7 +59,8 @@ impl App {
                 .unwrap()
                 .1
                 .parse::<usize>()
-                .unwrap();
+                .unwrap()
+                - 1;
             let mut session = history::read_history(session_file).unwrap();
 
             let mut start = 0;
@@ -190,7 +191,7 @@ impl App {
         history::add_to_history(
             history::get_session_history_file(&format!(
                 "session_{}.csv",
-                self.selected_session_idx
+                self.selected_session_idx + 1
             ))?,
             &solve,
         )?;
@@ -273,7 +274,7 @@ impl App {
         history::update_history(
             history::get_session_history_file(&format!(
                 "session_{}.csv",
-                self.selected_session_idx
+                self.selected_session_idx + 1
             ))?,
             self.get_solves(),
         )
