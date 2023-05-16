@@ -160,7 +160,11 @@ fn render_solves<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         ])
         .block(
             Block::default().borders(Borders::ALL).title(Span::styled(
-                "Solves",
+                format!(
+                    "Solves [{}/{}]",
+                    app.get_stats().valid_solve_count,
+                    app.get_stats().solve_count
+                ),
                 Style::default()
                     .fg(Color::Cyan)
                     .add_modifier(Modifier::BOLD),

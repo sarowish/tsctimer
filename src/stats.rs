@@ -88,6 +88,7 @@ pub struct Stats {
     pub mean_of_3: StatLine,
     pub avg_of_5: StatLine,
     pub avg_of_12: StatLine,
+    pub valid_solve_count: u128,
     pub solve_count: u128,
     pub global_mean: u128,
 }
@@ -102,6 +103,10 @@ impl Stats {
             solves.windows(3).filter_map(|w| get_mean(w, 3)).min(),
         );
 
+        self.valid_solve_count = solves
+            .iter()
+            .filter(|solve| !matches!(solve.time.penalty, Penalty::Dnf))
+            .count() as u128;
         self.solve_count = solves.len() as u128;
 
         self.global_mean = solves
