@@ -218,7 +218,7 @@ fn render_timer<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
 }
 
 fn render_inspection<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
-    let Some(remaining) = app.inspection.remaining() else {
+    let Some(remaining) = app.inspection.remaining(app.inspection_warning_enabled) else {
         app.inspection.stop();
         app.inspection.expired = true;
         app.state = AppState::Idle;

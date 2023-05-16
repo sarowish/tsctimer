@@ -35,6 +35,7 @@ pub struct App {
     pub cube_preview: Cube,
     pub state: AppState,
     pub inspection_enabled: bool,
+    pub inspection_warning_enabled: bool,
     pub confirmation: Option<Confirmation>,
 }
 
@@ -49,6 +50,7 @@ impl App {
             cube_preview: Cube::new(),
             state: AppState::Idle,
             inspection_enabled: true,
+            inspection_warning_enabled: true,
             confirmation: None,
         };
 
@@ -197,10 +199,6 @@ impl App {
         self.timer.reset();
         self.inspection.stop();
         self.state = AppState::Idle;
-    }
-
-    pub fn toggle_inspection(&mut self) {
-        self.inspection_enabled = !self.inspection_enabled;
     }
 
     fn add_solve(&mut self) -> Result<()> {

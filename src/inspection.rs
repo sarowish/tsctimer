@@ -30,17 +30,19 @@ impl Inspection {
         self.played_sound = 0;
     }
 
-    pub fn remaining(&mut self) -> Option<u64> {
+    pub fn remaining(&mut self, warning: bool) -> Option<u64> {
         if let Some(starting_time) = self.starting_time {
             let elapsed = starting_time.elapsed().unwrap().as_secs();
 
             if elapsed <= 15 {
-                if elapsed == 8 && self.played_sound == 0 {
-                    play_sound(425.0);
-                    self.played_sound = 1;
-                } else if elapsed == 12 && self.played_sound == 1 {
-                    play_sound(480.0);
-                    self.played_sound = 2;
+                if warning {
+                    if elapsed == 8 && self.played_sound == 0 {
+                        play_sound(425.0);
+                        self.played_sound = 1;
+                    } else if elapsed == 12 && self.played_sound == 1 {
+                        play_sound(480.0);
+                        self.played_sound = 2;
+                    }
                 }
 
                 return Some(self.duration - elapsed);

@@ -81,7 +81,10 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
                         KeyCode::Esc => app.cancel_timer(),
                         KeyCode::Char('q') => break,
                         KeyCode::Char('r') => app.generate_scramble(),
-                        KeyCode::Char('i') => app.toggle_inspection(),
+                        KeyCode::Char('i') => app.inspection_enabled = !app.inspection_enabled,
+                        KeyCode::Char('I') => {
+                            app.inspection_warning_enabled = !app.inspection_warning_enabled
+                        }
                         KeyCode::Char('d') => app.delete_last_solve()?,
                         KeyCode::Char('p') => app.toggle_plus_two()?,
                         KeyCode::Char('D') => app.toggle_dnf()?,
