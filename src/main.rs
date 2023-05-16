@@ -10,6 +10,7 @@ mod ui;
 use crate::app::App;
 use anyhow::Result;
 use app::AppState;
+use app::Confirmation;
 use crossterm::event::Event;
 use crossterm::event::KeyCode;
 use crossterm::execute;
@@ -65,10 +66,14 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = crossterm::event::read()? {
-                if app.ask_for_confirmation_true {
+                if app.confirmation.is_some() {
                     match key.code {
-                        KeyCode::Char('y') => app.delete_last_solve()?,
-                        KeyCode::Char('n') => app.ask_for_confirmation_true = false,
+                        KeyCode::Char('y') => match app.confirmation {
+                            Some(Confirmation::Solve) => app.delete_last_solve()?,
+                            Some(Confirmation::Session) => app.delete_session()?,
+                            _ => (),
+                        },
+                        KeyCode::Char('n') => app.confirmation = None,
                         _ => (),
                     }
                 } else {
@@ -80,6 +85,7 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
                         KeyCode::Char('d') => app.delete_last_solve()?,
                         KeyCode::Char('p') => app.toggle_plus_two()?,
                         KeyCode::Char('D') => app.toggle_dnf()?,
+                        KeyCode::Char('c') => app.delete_session()?,
                         KeyCode::Char('s') => app.next_session(),
                         KeyCode::Char('S') => app.previous_session(),
                         KeyCode::Char(' ') => match app.state {

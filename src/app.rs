@@ -21,6 +21,11 @@ pub enum AppState {
     Ready,
 }
 
+pub enum Confirmation {
+    Solve,
+    Session,
+}
+
 pub struct App {
     pub timer: Timer,
     pub inspection: Inspection,
@@ -30,7 +35,7 @@ pub struct App {
     pub cube_preview: Cube,
     pub state: AppState,
     pub inspection_enabled: bool,
-    pub ask_for_confirmation_true: bool,
+    pub confirmation: Option<Confirmation>,
 }
 
 impl App {
@@ -44,7 +49,7 @@ impl App {
             cube_preview: Cube::new(),
             state: AppState::Idle,
             inspection_enabled: true,
-            ask_for_confirmation_true: false,
+            confirmation: None,
         };
 
         app.generate_scramble_preview();
@@ -104,6 +109,24 @@ impl App {
         }
 
         app
+    }
+
+    pub fn delete_session(&mut self) -> Result<()> {
+        if matches!(self.confirmation, Some(Confirmation::Session)) {
+            let path = history::get_session_history_file(&format!(
+                "session_{}.csv",
+                self.selected_session_idx + 1
+            ))?;
+
+            std::fs::remove_file(path)?;
+            *self.get_mut_selected_session() = Session::default();
+
+            self.confirmation = None;
+        } else {
+            self.confirmation = Some(Confirmation::Session);
+        }
+
+        Ok(())
     }
 
     pub fn next_session(&mut self) {
@@ -210,15 +233,15 @@ impl App {
     }
 
     pub fn delete_last_solve(&mut self) -> Result<()> {
-        if self.ask_for_confirmation_true {
+        if matches!(self.confirmation, Some(Confirmation::Solve)) {
             if self.get_mut_solves().pop().is_some() {
                 self.get_mut_selected_session().update_stats()
             }
 
-            self.ask_for_confirmation_true = false;
+            self.confirmation = None;
             self.rewrite_history_file()
         } else {
-            self.ask_for_confirmation_true = true;
+            self.confirmation = Some(Confirmation::Solve);
             Ok(())
         }
     }

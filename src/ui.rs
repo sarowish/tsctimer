@@ -1,5 +1,5 @@
 use crate::{
-    app::{App, AppState},
+    app::{App, AppState, Confirmation},
     cube::Face,
     stats::stat_line_to_row,
     timer::millis_to_string_not_running,
@@ -67,8 +67,18 @@ pub fn render<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     }
     render_cube(f, app, chunks[3]);
 
-    if app.ask_for_confirmation_true {
-        render_confirmation_window(f);
+    match app.confirmation {
+        Some(Confirmation::Solve) => {
+            render_confirmation_window(f, "Are you sure you want to delete the latest solve?")
+        }
+        Some(Confirmation::Session) => render_confirmation_window(
+            f,
+            &format!(
+                "Are you sure you want to delete 'Session {}'?",
+                app.selected_session_idx + 1
+            ),
+        ),
+        None => (),
     }
 }
 
@@ -281,7 +291,7 @@ fn render_cube<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     f.render_widget(text, area);
 }
 
-fn render_confirmation_window<B: Backend>(f: &mut Frame<B>) {
+fn render_confirmation_window<B: Backend>(f: &mut Frame<B>, text: &str) {
     let window = popup_window_from_percentage(50, 15, f.size());
     f.render_widget(Clear, window);
     f.render_widget(Block::default().borders(Borders::ALL), window);
@@ -300,10 +310,7 @@ fn render_confirmation_window<B: Backend>(f: &mut Frame<B>) {
         (chunks[0], chunks[1])
     };
 
-    let mut text = Paragraph::new(Spans::from(
-        "Are you sure you want to delete the latest solve?",
-    ))
-    .alignment(Alignment::Center);
+    let mut text = Paragraph::new(Spans::from(text)).alignment(Alignment::Center);
     // program crashes if width is 0 and wrap is enabled
     if chunks[0].width > 0 {
         text = text.wrap(Wrap { trim: true });
