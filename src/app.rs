@@ -30,6 +30,7 @@ pub struct App {
     pub timer: Timer,
     pub inspection: Inspection,
     pub scramble: Scramble,
+    pub last_scramble: Option<Scramble>,
     pub session: Session,
     pub available_sessions: Vec<bool>,
     pub selected_session_idx: usize,
@@ -46,6 +47,7 @@ impl App {
             timer: Timer::new(),
             inspection: Inspection::new(),
             scramble: Scramble::new(SCRAMBLE_LENGTH),
+            last_scramble: None,
             session: Session::default(),
             available_sessions: Vec::default(),
             selected_session_idx: 0,
@@ -185,7 +187,10 @@ impl App {
     }
 
     pub fn generate_scramble(&mut self) {
-        self.scramble = Scramble::new(SCRAMBLE_LENGTH);
+        self.last_scramble = Some(std::mem::replace(
+            &mut self.scramble,
+            Scramble::new(SCRAMBLE_LENGTH),
+        ));
         self.generate_scramble_preview();
     }
 

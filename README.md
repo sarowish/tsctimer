@@ -16,6 +16,7 @@ cargo install tsctimer --git https://github.com/sarowish/tsctimer
 | `space`                    | start inspection / stop timer        |
 | `esc`                      | abort timer / inspection             |
 | `r`                        | rescramble                           |
+| `R`                        | display last scramble                |
 | `i`                        | enable/disable inspection            |
 | `I`                        | enable/disable inspection warning    |
 | `d`                        | delete last solve                    |

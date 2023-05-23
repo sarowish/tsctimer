@@ -81,6 +81,12 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
                         KeyCode::Esc => app.cancel_timer(),
                         KeyCode::Char('q') => break,
                         KeyCode::Char('r') => app.generate_scramble(),
+                        KeyCode::Char('R') => {
+                            if let Some(scramble) = &app.last_scramble {
+                                app.scramble = scramble.clone();
+                                app.generate_scramble_preview();
+                            }
+                        }
                         KeyCode::Char('i') => app.inspection_enabled = !app.inspection_enabled,
                         KeyCode::Char('I') => {
                             app.inspection_warning_enabled = !app.inspection_warning_enabled
