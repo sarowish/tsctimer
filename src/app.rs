@@ -142,7 +142,7 @@ impl App {
             self.available_sessions[self.selected_session_idx] = false;
 
             self.confirmation = None;
-        } else {
+        } else if self.available_sessions[self.selected_session_idx] {
             self.confirmation = Some(Confirmation::Session);
         }
 
