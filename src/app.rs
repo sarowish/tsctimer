@@ -85,7 +85,9 @@ impl App {
             }
         }
 
-        if !app.available_sessions.is_empty() {
+        if app.available_sessions.is_empty() {
+            app.available_sessions.push(false);
+        } else {
             app.load_session()?;
         }
 
