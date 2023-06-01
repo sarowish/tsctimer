@@ -266,11 +266,12 @@ impl App {
             }
 
             self.confirmation = None;
-            self.rewrite_history_file()
-        } else {
+            return self.rewrite_history_file();
+        } else if !self.get_solves().is_empty() {
             self.confirmation = Some(Confirmation::Solve);
-            Ok(())
         }
+
+        Ok(())
     }
 
     pub fn toggle_plus_two(&mut self) -> Result<()> {
