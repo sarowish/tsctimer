@@ -8,7 +8,7 @@ use ratatui::{
     backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Spans, Text},
+    text::{Line, Span, Text},
     widgets::{Block, Borders, Clear, Paragraph, Row, Table, Wrap},
     Frame,
 };
@@ -171,7 +171,15 @@ fn render_solves<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
             )),
         );
 
-    f.render_widget(solves, area);
+    let height = area.height as usize - 3;
+
+    if height > app.get_solves().len() {
+        app.scroll(0);
+    } else if height > app.get_solves().len() - app.solves_state.offset() {
+        app.scroll(app.get_solves().len() - height);
+    }
+
+    f.render_stateful_widget(solves, area, &mut app.solves_state);
 }
 
 fn render_scramble<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
@@ -282,7 +290,7 @@ fn render_cube<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         grid[i + 8][9] = Span::from(&app.cube_preview.facelets[i * 3 + 47]);
     }
 
-    let grid = grid.into_iter().map(Spans::from).collect::<Vec<Spans>>();
+    let grid = grid.into_iter().map(Line::from).collect::<Vec<Line>>();
     let text = Paragraph::new(grid).block(
         Block::default().borders(Borders::ALL).title(Span::styled(
             "Scramble Preview",
@@ -314,18 +322,18 @@ fn render_confirmation_window<B: Backend>(f: &mut Frame<B>, text: &str) {
         (chunks[0], chunks[1])
     };
 
-    let mut text = Paragraph::new(Spans::from(text)).alignment(Alignment::Center);
+    let mut text = Paragraph::new(Line::from(text)).alignment(Alignment::Center);
     // program crashes if width is 0 and wrap is enabled
     if chunks[0].width > 0 {
         text = text.wrap(Wrap { trim: true });
     }
 
-    let yes = Paragraph::new(Spans::from(vec![
+    let yes = Paragraph::new(Line::from(vec![
         Span::styled("Y", Style::default().fg(Color::Green)),
         Span::raw("es"),
     ]))
     .alignment(Alignment::Center);
-    let no = Paragraph::new(Spans::from(vec![
+    let no = Paragraph::new(Line::from(vec![
         Span::styled("N", Style::default().fg(Color::Red)),
         Span::raw("o"),
     ]))

@@ -23,6 +23,8 @@ cargo install tsctimer --git https://github.com/sarowish/tsctimer
 | `c`                        | delete session                       |
 | `D`                        | mark last solve as dnf               |
 | `p`                        | mark last solve as +2                |
+| `ctrl-e`                   | scroll solves list downwards         |
+| `ctrl-y`                   | scroll solves list upwards           |
 | `s`                        | switch to next session               |
 | `S`                        | switch to previous session           |
 | `q`                        | quit application                     |

@@ -13,6 +13,7 @@ use app::AppState;
 use app::Confirmation;
 use crossterm::event::Event;
 use crossterm::event::KeyCode;
+use crossterm::event::KeyModifiers;
 use crossterm::execute;
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
@@ -74,6 +75,12 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
                             _ => (),
                         },
                         KeyCode::Char('n') => app.confirmation = None,
+                        _ => (),
+                    }
+                } else if let KeyModifiers::CONTROL = key.modifiers {
+                    match key.code {
+                        KeyCode::Char('e') => app.scroll_down(),
+                        KeyCode::Char('y') => app.scroll_up(),
                         _ => (),
                     }
                 } else {

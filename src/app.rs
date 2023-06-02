@@ -7,6 +7,7 @@ use crate::{
     timer::Timer,
 };
 use anyhow::Result;
+use ratatui::widgets::TableState;
 use std::{
     cmp::Ordering,
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -34,6 +35,7 @@ pub struct App {
     pub session: Session,
     pub available_sessions: Vec<bool>,
     pub selected_session_idx: usize,
+    pub solves_state: TableState,
     pub cube_preview: Cube,
     pub state: AppState,
     pub inspection_enabled: bool,
@@ -51,6 +53,7 @@ impl App {
             session: Session::default(),
             available_sessions: Vec::default(),
             selected_session_idx: 0,
+            solves_state: TableState::default().with_selected(Some(0)),
             cube_preview: Cube::new(),
             state: AppState::Idle,
             inspection_enabled: true,
@@ -127,6 +130,8 @@ impl App {
         session.update_stats();
         self.session = session;
 
+        self.scroll(0);
+
         Ok(())
     }
 
@@ -182,6 +187,29 @@ impl App {
 
     pub fn get_mut_solves(&mut self) -> &mut Vec<Solve> {
         &mut self.session.solves
+    }
+
+    pub fn scroll(&mut self, offset: usize) {
+        self.solves_state.select(Some(offset));
+        *self.solves_state.offset_mut() = offset;
+    }
+
+    pub fn scroll_up(&mut self) {
+        let i = match self.solves_state.selected() {
+            Some(i) if i != 0 => i - 1,
+            _ => 0,
+        };
+
+        self.scroll(i);
+    }
+
+    pub fn scroll_down(&mut self) {
+        let i = match self.solves_state.selected() {
+            Some(i) if i < self.get_solves().len() - 1 => i + 1,
+            _ => 0,
+        };
+
+        self.scroll(i);
     }
 
     pub fn get_stats(&self) -> &Stats {
