@@ -1,22 +1,21 @@
+use crate::app::Penalty;
 use anyhow::Result;
 use rodio::{Sink, Source};
 use std::time::{Duration, SystemTime};
 
-const INSPECTING_TIME: u64 = 15;
+pub const INSPECTION_DURATION: u64 = 15;
 
 pub struct Inspection {
-    duration: u64,
     starting_time: Option<SystemTime>,
-    pub expired: bool,
+    pub penalty: Penalty,
     played_sound: u8,
 }
 
 impl Inspection {
     pub fn new() -> Self {
         Inspection {
-            duration: INSPECTING_TIME,
             starting_time: None,
-            expired: false,
+            penalty: Penalty::Ok,
             played_sound: 0,
         }
     }
@@ -26,15 +25,31 @@ impl Inspection {
     }
 
     pub fn stop(&mut self) {
+        if let Some(elapsed) = self.starting_time.and_then(|time| time.elapsed().ok()) {
+            self.penalty = match elapsed.as_secs() {
+                ..15 => Penalty::Ok,
+                15..17 => Penalty::PlusTwo,
+                _ => Penalty::Dnf,
+            }
+        }
+
         self.starting_time = None;
         self.played_sound = 0;
     }
 
-    pub fn remaining(&mut self, warning: bool) -> Option<u64> {
-        if let Some(starting_time) = self.starting_time {
-            let elapsed = starting_time.elapsed().unwrap().as_secs();
+    pub fn elapsed(&self) -> Option<u64> {
+        self.starting_time
+            .and_then(|time| time.elapsed().ok())
+            .map(|elapsed| elapsed.as_secs())
+    }
 
-            if elapsed <= 15 {
+    pub fn tick(&mut self, warning: bool) -> bool {
+        if !self.is_running() {
+            return true;
+        }
+
+        if let Some(elapsed) = self.elapsed() {
+            if elapsed < 15 {
                 if warning {
                     if elapsed == 8 && self.played_sound == 0 {
                         play_sound(425.0);
@@ -44,18 +59,22 @@ impl Inspection {
                         self.played_sound = 2;
                     }
                 }
-
-                return Some(self.duration - elapsed);
+                return true;
+            } else if elapsed < 17 {
+                return true;
             }
         }
 
         self.stop();
-
-        None
+        false
     }
 
     pub fn is_running(&self) -> bool {
         self.starting_time.is_some()
+    }
+
+    pub fn has_expired(&self) -> bool {
+        matches!(self.penalty, Penalty::Dnf)
     }
 }
 

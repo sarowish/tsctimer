@@ -257,9 +257,16 @@ impl App {
         self.state = AppState::Idle;
     }
 
-    fn add_solve(&mut self) -> Result<()> {
+    pub fn add_solve(&mut self) -> Result<()> {
+        let penalty = if self.inspection_enabled {
+            self.inspection.penalty
+        } else {
+            Penalty::Ok
+        };
+
         let solve = Solve::new(
             self.timer.result,
+            penalty,
             None,
             None,
             std::mem::replace(&mut self.scramble, Scramble::new(SCRAMBLE_LENGTH)),
@@ -303,7 +310,9 @@ impl App {
     }
 
     pub fn toggle_plus_two(&mut self) -> Result<()> {
-        let Some(solve) = self.get_mut_solves().last_mut() else { return Ok(()); };
+        let Some(solve) = self.get_mut_solves().last_mut() else {
+            return Ok(());
+        };
 
         if matches!(solve.time.penalty, Penalty::PlusTwo) {
             solve.time.penalty = Penalty::Ok;
@@ -326,7 +335,9 @@ impl App {
     }
 
     pub fn toggle_dnf(&mut self) -> Result<()> {
-        let Some(solve) = self.get_mut_solves().last_mut() else { return Ok(()); };
+        let Some(solve) = self.get_mut_solves().last_mut() else {
+            return Ok(());
+        };
 
         solve.time.penalty = match solve.time.penalty {
             Penalty::Ok => Penalty::Dnf,
@@ -406,12 +417,13 @@ pub struct Solve {
 impl Solve {
     fn new(
         time: Duration,
+        penalty: Penalty,
         avg_of_5: Option<StatEntry>,
         avg_of_12: Option<StatEntry>,
         scramble: Scramble,
     ) -> Self {
         Self {
-            time: StatEntry::new(time.as_millis(), Penalty::Ok),
+            time: StatEntry::new(time.as_millis(), penalty),
             avg_of_5,
             avg_of_12,
             scramble,

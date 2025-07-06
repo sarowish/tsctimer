@@ -1,6 +1,7 @@
 use crate::{
     app::{App, AppState, Confirmation},
     cube::Face,
+    inspection::INSPECTION_DURATION,
     stats::stat_line_to_row,
     timer::millis_to_string_not_running,
 };
@@ -91,7 +92,7 @@ fn render_left_pane(f: &mut Frame, app: &mut App, area: Rect) {
     render_solves(f, app, chunks[1]);
 }
 
-fn render_stats(f: &mut Frame, app: &mut App, area: Rect) {
+fn render_stats(f: &mut Frame, app: &App, area: Rect) {
     let stats = vec![
         stat_line_to_row("time:", &app.get_stats().time),
         stat_line_to_row("mo3:", &app.get_stats().mean_of_3),
@@ -183,7 +184,7 @@ fn render_solves(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_stateful_widget(solves, area, &mut app.solves_state);
 }
 
-fn render_scramble(f: &mut Frame, app: &mut App, area: Rect) {
+fn render_scramble(f: &mut Frame, app: &App, area: Rect) {
     let block = Block::default().borders(Borders::ALL).title(Span::styled(
         "Scramble",
         Style::default()
@@ -207,7 +208,7 @@ fn render_scramble(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_widget(scramble, area);
 }
 
-fn render_timer(f: &mut Frame, app: &mut App, area: Rect) {
+fn render_timer(f: &mut Frame, app: &App, area: Rect) {
     let time = app.timer.to_string();
 
     let time = generate_font(&time);
@@ -226,16 +227,20 @@ fn render_timer(f: &mut Frame, app: &mut App, area: Rect) {
     f.render_widget(time_text, area);
 }
 
-fn render_inspection(f: &mut Frame, app: &mut App, area: Rect) {
-    let Some(remaining) = app.inspection.remaining(app.inspection_warning_enabled) else {
-        app.inspection.stop();
-        app.inspection.expired = true;
-        app.state = AppState::Idle;
-        app.generate_scramble();
+fn render_inspection(f: &mut Frame, app: &App, area: Rect) {
+    let Some(remaining) = app
+        .inspection
+        .elapsed()
+        .map(|elapsed| INSPECTION_DURATION.saturating_sub(elapsed))
+    else {
         return;
     };
 
-    let time = generate_font(&remaining.to_string());
+    let time = if remaining == 0 {
+        generate_font("+2")
+    } else {
+        generate_font(&remaining.to_string())
+    };
     let area = center_vertically(&time, area);
 
     let time_text = Paragraph::new(Text::styled(
@@ -394,6 +399,8 @@ fn generate_font(text: &str) -> String {
     for ch in text.chars() {
         if let Some(digit) = ch.to_digit(10) {
             convert_digit_to_font(digit, &mut result);
+        } else if ch == '+' {
+            convert_digit_to_font(10, &mut result);
         } else if ch == ':' {
             colon_to_font(&mut result);
         } else {
@@ -455,5 +462,5 @@ const NUMBERS: [[i32; 15]; 11] = [
     [1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], /* 7 */
     [1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1], /* 8 */
     [1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1], /* 9 */
-    [1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1], /* 9 */
+    [0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0], /* + */
 ];

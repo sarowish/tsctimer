@@ -17,7 +17,11 @@ pub struct StatEntry {
 }
 
 impl StatEntry {
-    pub fn new(time: u128, penalty: Penalty) -> Self {
+    pub fn new(mut time: u128, penalty: Penalty) -> Self {
+        if let Penalty::PlusTwo = penalty {
+            time += 2000;
+        }
+
         Self { time, penalty }
     }
 }

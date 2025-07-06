@@ -9,8 +9,7 @@ mod ui;
 
 use crate::app::App;
 use anyhow::Result;
-use app::AppState;
-use app::Confirmation;
+use app::{AppState, Confirmation, Penalty};
 use crossterm::event::Event;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyModifiers;
@@ -46,6 +45,12 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
     loop {
         if matches!(app.state, AppState::Set) {
             app.timer.reset();
+        }
+
+        if !app.inspection.tick(app.inspection_warning_enabled) {
+            app.add_solve()?;
+            app.state = AppState::Idle;
+            app.generate_scramble();
         }
 
         terminal.draw(|f| render(f, app))?;
@@ -91,7 +96,7 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
                         KeyCode::Char('s') => app.next_session()?,
                         KeyCode::Char('S') => app.previous_session()?,
                         KeyCode::Char(' ') => match app.state {
-                            AppState::Idle if !app.inspection.expired => {
+                            AppState::Idle if !app.inspection.has_expired() => {
                                 if app.inspection_enabled && !app.inspection.is_running() {
                                     app.start_inspecting();
                                 }
@@ -110,7 +115,10 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
             }
             last_tick = Instant::now();
         } else {
-            app.inspection.expired = false;
+            if app.inspection.has_expired() {
+                app.inspection.penalty = Penalty::Ok;
+            }
+
             match app.state {
                 AppState::Set => {
                     app.inspection.stop();
