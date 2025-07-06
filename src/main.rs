@@ -15,30 +15,16 @@ use crossterm::event::Event;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyModifiers;
 use crossterm::execute;
-use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
-};
-use ratatui::backend::{Backend, CrosstermBackend};
+use crossterm::terminal::{disable_raw_mode, LeaveAlternateScreen};
+use ratatui::backend::Backend;
 use ratatui::Terminal;
 use std::io;
-use std::panic;
 use std::time::Duration;
 use std::time::Instant;
 use ui::render;
 
 fn main() -> Result<()> {
-    let default_hook = panic::take_hook();
-
-    panic::set_hook(Box::new(move |info| {
-        reset_terminal().unwrap();
-        default_hook(info);
-    }));
-
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    let mut terminal = ratatui::init();
     terminal.clear()?;
 
     let mut app = App::new()?;

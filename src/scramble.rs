@@ -1,11 +1,11 @@
 use crate::cube::{Face, Move, Rotation};
-use rand::distributions::{Distribution, Standard};
+use rand::distr::{Distribution, StandardUniform};
 use rand::Rng;
 use std::fmt::Display;
 
-impl Distribution<Face> for Standard {
+impl Distribution<Face> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Face {
-        match rng.gen_range(0..=5) {
+        match rng.random_range(0..=5) {
             0 => Face::Up,
             1 => Face::Down,
             2 => Face::Front,
@@ -16,9 +16,9 @@ impl Distribution<Face> for Standard {
     }
 }
 
-impl Distribution<Rotation> for Standard {
+impl Distribution<Rotation> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Rotation {
-        match rng.gen_range(0..=2) {
+        match rng.random_range(0..=2) {
             0 => Rotation::Clockwise,
             1 => Rotation::CounterClockwise,
             _ => Rotation::DoubleTurn,

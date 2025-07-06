@@ -5,7 +5,6 @@ use crate::{
     timer::millis_to_string_not_running,
 };
 use ratatui::{
-    backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span, Text},
@@ -13,24 +12,24 @@ use ratatui::{
     Frame,
 };
 
-pub fn render<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+pub fn render(f: &mut Frame, app: &mut App) {
     if app.inspection.is_running() {
-        render_inspection(f, app, f.size());
+        render_inspection(f, app, f.area());
         return;
     } else if matches!(app.state, AppState::Set) || app.timer.is_running() {
-        render_timer(f, app, f.size());
+        render_timer(f, app, f.area());
         return;
     }
 
-    let (left_pane_area, main_area) = if f.size().width > 140 {
+    let (left_pane_area, main_area) = if f.area().width > 140 {
         let chunks = Layout::default()
             .constraints([Constraint::Length(45), Constraint::Min(1)].as_ref())
             .direction(Direction::Horizontal)
-            .split(f.size());
+            .split(f.area());
 
         (Some(chunks[0]), chunks[1])
     } else {
-        (None, f.size())
+        (None, f.area())
     };
 
     let mut chunks = Layout::default()
@@ -82,7 +81,7 @@ pub fn render<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     }
 }
 
-fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+fn render_left_pane(f: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .constraints([Constraint::Max(9), Constraint::Min(1)].as_ref())
         .direction(Direction::Vertical)
@@ -92,7 +91,7 @@ fn render_left_pane<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     render_solves(f, app, chunks[1]);
 }
 
-fn render_stats<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+fn render_stats(f: &mut Frame, app: &mut App, area: Rect) {
     let stats = vec![
         stat_line_to_row("time:", &app.get_stats().time),
         stat_line_to_row("mo3:", &app.get_stats().mean_of_3),
@@ -105,14 +104,15 @@ fn render_stats<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         ]),
     ];
 
-    let stats = Table::new(stats)
+    let widths = [
+        Constraint::Percentage(33),
+        Constraint::Percentage(33),
+        Constraint::Percentage(33),
+    ];
+
+    let stats = Table::new(stats, widths)
         .header(Row::new(vec!["      ", "Current", "Best"]))
         .column_spacing(2)
-        .widths(&[
-            Constraint::Percentage(33),
-            Constraint::Percentage(33),
-            Constraint::Percentage(33),
-        ])
         .block(
             Block::default().borders(Borders::ALL).title(Span::styled(
                 format!("Stats [Session {}]", app.selected_session_idx + 1),
@@ -125,7 +125,7 @@ fn render_stats<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     f.render_widget(stats, area);
 }
 
-fn render_solves<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+fn render_solves(f: &mut Frame, app: &mut App, area: Rect) {
     let solves = app
         .get_solves()
         .iter()
@@ -150,14 +150,15 @@ fn render_solves<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
         .map(Row::new)
         .collect::<Vec<Row>>();
 
-    let solves = Table::new(solves)
+    let widths = [
+        Constraint::Percentage(25),
+        Constraint::Percentage(25),
+        Constraint::Percentage(25),
+        Constraint::Percentage(25),
+    ];
+
+    let solves = Table::new(solves, widths)
         .header(Row::new(vec![" ", "time", "ao5", "ao12"]))
-        .widths(&[
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-        ])
         .block(
             Block::default().borders(Borders::ALL).title(Span::styled(
                 format!(
@@ -182,7 +183,7 @@ fn render_solves<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     f.render_stateful_widget(solves, area, &mut app.solves_state);
 }
 
-fn render_scramble<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+fn render_scramble(f: &mut Frame, app: &mut App, area: Rect) {
     let block = Block::default().borders(Borders::ALL).title(Span::styled(
         "Scramble",
         Style::default()
@@ -206,7 +207,7 @@ fn render_scramble<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     f.render_widget(scramble, area);
 }
 
-fn render_timer<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+fn render_timer(f: &mut Frame, app: &mut App, area: Rect) {
     let time = app.timer.to_string();
 
     let time = generate_font(&time);
@@ -225,7 +226,7 @@ fn render_timer<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     f.render_widget(time_text, area);
 }
 
-fn render_inspection<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+fn render_inspection(f: &mut Frame, app: &mut App, area: Rect) {
     let Some(remaining) = app.inspection.remaining(app.inspection_warning_enabled) else {
         app.inspection.stop();
         app.inspection.expired = true;
@@ -259,7 +260,7 @@ impl From<&Face> for Span<'_> {
     }
 }
 
-fn render_cube<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
+fn render_cube(f: &mut Frame, app: &mut App, area: Rect) {
     let mut grid = (0..11)
         .map(|_| vec![Span::raw(" "); 15])
         .collect::<Vec<Vec<Span>>>();
@@ -303,8 +304,8 @@ fn render_cube<B: Backend>(f: &mut Frame<B>, app: &mut App, area: Rect) {
     f.render_widget(text, area);
 }
 
-fn render_confirmation_window<B: Backend>(f: &mut Frame<B>, text: &str) {
-    let window = popup_window_from_percentage(50, 15, f.size());
+fn render_confirmation_window(f: &mut Frame, text: &str) {
+    let window = popup_window_from_percentage(50, 15, f.area());
     f.render_widget(Clear, window);
     f.render_widget(Block::default().borders(Borders::ALL), window);
 
