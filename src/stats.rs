@@ -53,7 +53,12 @@ impl Eq for StatEntry {}
 
 impl Ord for StatEntry {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.time.cmp(&other.time)
+        match (self.penalty, other.penalty) {
+            (Penalty::Dnf, Penalty::Dnf) => self.time.cmp(&other.time),
+            (_, Penalty::Dnf) => Ordering::Less,
+            (Penalty::Dnf, _) => Ordering::Greater,
+            _ => self.time.cmp(&other.time),
+        }
     }
 }
 
