@@ -96,7 +96,7 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
                         }
                         KeyCode::Char('i') => app.inspection_enabled = !app.inspection_enabled,
                         KeyCode::Char('I') => {
-                            app.inspection_warning_enabled = !app.inspection_warning_enabled
+                            app.inspection_warning_enabled = !app.inspection_warning_enabled;
                         }
                         KeyCode::Char('d') => app.delete_last_solve()?,
                         KeyCode::Char('p') => app.toggle_plus_two()?,

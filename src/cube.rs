@@ -12,7 +12,7 @@ pub enum Face {
 }
 
 impl Face {
-    pub fn opposite_face(&self) -> Self {
+    pub fn opposite_face(self) -> Self {
         match self {
             Face::Up => Face::Down,
             Face::Down => Face::Up,

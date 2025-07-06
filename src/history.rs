@@ -82,6 +82,7 @@ pub fn update_history(path: PathBuf, solves: &[Solve]) -> Result<()> {
     let out_file = std::fs::OpenOptions::new()
         .write(true)
         .create(true)
+        .truncate(true)
         .open(path.with_extension("tmp"))?;
 
     let mut wtr = csv::WriterBuilder::new()

@@ -17,7 +17,7 @@ impl Timer {
     }
 
     pub fn start(&mut self) {
-        self.starting_time = Some(SystemTime::now())
+        self.starting_time = Some(SystemTime::now());
     }
 
     pub fn stop(&mut self) {
@@ -49,7 +49,7 @@ impl fmt::Display for Timer {
 
         let time_text = millis_to_string(time, self.is_running());
 
-        write!(f, "{}", time_text)
+        write!(f, "{time_text}")
     }
 }
 
@@ -63,14 +63,14 @@ pub fn millis_to_string(time: u128, is_running: bool) -> String {
             if is_running {
                 format!("{}.{}", seconds, millis / 100)
             } else {
-                format!("{}.{:03}", seconds, millis)
+                format!("{seconds}.{millis:03}")
             }
         }
         _ => {
             if is_running {
                 format!("{}:{}.{}", minutes, seconds, millis / 100)
             } else {
-                format!("{}:{}.{:03}", minutes, seconds, millis)
+                format!("{minutes}:{seconds}.{millis:03}")
             }
         }
     }

@@ -81,7 +81,7 @@ impl App {
                 Ordering::Equal => app.available_sessions.push(true),
                 Ordering::Greater => {
                     for _ in 0..(idx - app.available_sessions.len()) {
-                        app.available_sessions.push(false)
+                        app.available_sessions.push(false);
                     }
                     app.available_sessions.push(true);
                 }
@@ -290,7 +290,7 @@ impl App {
     pub fn delete_last_solve(&mut self) -> Result<()> {
         if matches!(self.confirmation, Some(Confirmation::Solve)) {
             if self.get_mut_solves().pop().is_some() {
-                self.session.update_stats()
+                self.session.update_stats();
             }
 
             self.confirmation = None;

@@ -148,9 +148,7 @@ impl Stats {
 }
 
 fn get_mean(solves: &[Solve], mean_of: usize) -> Option<StatEntry> {
-    let Some(solves) = get_solves_from_tail(solves, mean_of) else {
-        return None;
-    };
+    let solves = get_solves_from_tail(solves, mean_of)?;
 
     let mut sum = 0;
 
@@ -166,9 +164,7 @@ fn get_mean(solves: &[Solve], mean_of: usize) -> Option<StatEntry> {
 }
 
 pub fn get_avg(solves: &[Solve], avg_of: usize) -> Option<StatEntry> {
-    let Some(solves) = get_solves_from_tail(solves, avg_of) else {
-        return None;
-    };
+    let solves = get_solves_from_tail(solves, avg_of)?;
 
     let mut sum = 0;
     let mut min = u128::MAX;

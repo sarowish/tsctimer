@@ -49,7 +49,7 @@ impl Scramble {
                     previous_move = r#move.clone();
                     break r#move;
                 }
-            })
+            });
         }
 
         Self { moves }
@@ -63,7 +63,7 @@ impl Display for Scramble {
             "{}",
             self.moves
                 .iter()
-                .map(|r#move| r#move.to_string())
+                .map(ToString::to_string)
                 .collect::<Vec<String>>()
                 .join(" ")
         )

@@ -22,7 +22,7 @@ impl Inspection {
     }
 
     pub fn start(&mut self) {
-        self.starting_time = Some(SystemTime::now())
+        self.starting_time = Some(SystemTime::now());
     }
 
     pub fn stop(&mut self) {

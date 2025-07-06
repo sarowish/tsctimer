@@ -69,7 +69,7 @@ pub fn render<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     match app.confirmation {
         Some(Confirmation::Solve) => {
-            render_confirmation_window(f, "Are you sure you want to delete the latest solve?")
+            render_confirmation_window(f, "Are you sure you want to delete the latest solve?");
         }
         Some(Confirmation::Session) => render_confirmation_window(
             f,
@@ -397,7 +397,7 @@ fn generate_font(text: &str) -> String {
             colon_to_font(&mut result);
         } else {
             dot_to_font(&mut result);
-        };
+        }
     }
 
     result.join("\n")
