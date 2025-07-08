@@ -4,6 +4,7 @@ mod history;
 mod input;
 mod inspection;
 mod scramble;
+mod session;
 mod stats;
 mod timer;
 mod ui;

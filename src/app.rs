@@ -3,12 +3,12 @@ use crate::{
     history,
     inspection::Inspection,
     scramble::Scramble,
+    session::Session,
     stats::{get_avg, StatEntry, Stats},
     timer::Timer,
 };
 use anyhow::Result;
 use crossterm::terminal;
-use ratatui::widgets::TableState;
 use std::{
     cmp::Ordering,
     time::{Duration, SystemTime, UNIX_EPOCH},
@@ -36,7 +36,6 @@ pub struct App {
     pub session: Session,
     pub available_sessions: Vec<bool>,
     pub selected_session_idx: usize,
-    pub solves_state: TableState,
     pub cube_preview: Cube,
     pub state: AppState,
     pub inspection_enabled: bool,
@@ -55,7 +54,6 @@ impl App {
             session: Session::default(),
             available_sessions: Vec::default(),
             selected_session_idx: 0,
-            solves_state: TableState::default().with_selected(Some(0)),
             cube_preview: Cube::new(),
             state: AppState::Idle,
             inspection_enabled: true,
@@ -131,9 +129,8 @@ impl App {
         }
 
         session.update_stats();
+        session.select_first();
         self.session = session;
-
-        self.scroll(0);
 
         Ok(())
     }
@@ -190,29 +187,6 @@ impl App {
 
     pub fn get_mut_solves(&mut self) -> &mut Vec<Solve> {
         &mut self.session.solves
-    }
-
-    pub fn scroll(&mut self, offset: usize) {
-        self.solves_state.select(Some(offset));
-        *self.solves_state.offset_mut() = offset;
-    }
-
-    pub fn scroll_up(&mut self) {
-        let i = match self.solves_state.selected() {
-            Some(i) if i != 0 => i - 1,
-            _ => 0,
-        };
-
-        self.scroll(i);
-    }
-
-    pub fn scroll_down(&mut self) {
-        let i = match self.solves_state.selected() {
-            Some(i) if i < self.get_solves().len() - 1 => i + 1,
-            _ => 0,
-        };
-
-        self.scroll(i);
     }
 
     pub fn get_stats(&self) -> &Stats {
@@ -297,14 +271,15 @@ impl App {
         Ok(())
     }
 
-    pub fn delete_last_solve(&mut self) -> Result<()> {
+    pub fn delete_selected_solve(&mut self) -> Result<()> {
         if matches!(self.confirmation, Some(Confirmation::Solve)) {
-            if self.get_mut_solves().pop().is_some() {
-                self.session.update_stats();
+            if let Some(idx) = self.session.selected_idx() {
+                self.session.solves.remove(idx);
+                self.session.update_around(idx + 1);
             }
 
             self.confirmation = None;
-            return self.rewrite_history_file();
+            self.rewrite_history_file()?;
         } else if !self.get_solves().is_empty() {
             self.confirmation = Some(Confirmation::Solve);
         }
@@ -313,9 +288,11 @@ impl App {
     }
 
     pub fn toggle_plus_two(&mut self) -> Result<()> {
-        let Some(solve) = self.get_mut_solves().last_mut() else {
+        let Some(idx) = self.session.selected_idx() else {
             return Ok(());
         };
+
+        let solve = &mut self.session.solves[idx];
 
         if matches!(solve.time.penalty, Penalty::PlusTwo) {
             solve.time.penalty = Penalty::Ok;
@@ -325,22 +302,16 @@ impl App {
             solve.time.time += 2000;
         }
 
-        let avg_of_5 = get_avg(self.get_solves(), 5);
-        let avg_of_12 = get_avg(self.get_solves(), 12);
-
-        let solve = self.get_mut_solves().last_mut().unwrap();
-
-        solve.avg_of_5 = avg_of_5;
-        solve.avg_of_12 = avg_of_12;
-
-        self.session.update_stats();
+        self.session.update_around(idx);
         self.rewrite_history_file()
     }
 
     pub fn toggle_dnf(&mut self) -> Result<()> {
-        let Some(solve) = self.get_mut_solves().last_mut() else {
+        let Some(idx) = self.session.selected_idx() else {
             return Ok(());
         };
+
+        let solve = &mut self.session.solves[idx];
 
         solve.time.penalty = match solve.time.penalty {
             Penalty::Ok => Penalty::Dnf,
@@ -351,15 +322,7 @@ impl App {
             Penalty::Dnf => Penalty::Ok,
         };
 
-        let avg_of_5 = get_avg(self.get_solves(), 5);
-        let avg_of_12 = get_avg(self.get_solves(), 12);
-
-        let solve = self.get_mut_solves().last_mut().unwrap();
-
-        solve.avg_of_5 = avg_of_5;
-        solve.avg_of_12 = avg_of_12;
-
-        self.session.update_stats();
+        self.session.update_around(idx);
         self.rewrite_history_file()
     }
 
@@ -371,22 +334,6 @@ impl App {
             ))?,
             self.get_solves(),
         )
-    }
-}
-
-#[derive(Default)]
-pub struct Session {
-    pub solves: Vec<Solve>,
-    stats: Stats,
-}
-
-impl Session {
-    fn update_stats_on_new(&mut self) {
-        self.stats.update_on_new(&self.solves);
-    }
-
-    fn update_stats(&mut self) {
-        self.stats.update(&self.solves);
     }
 }
 

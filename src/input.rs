@@ -14,7 +14,7 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> Result<bool> {
     if app.confirmation.is_some() {
         match key.code {
             KeyCode::Char('y') => match app.confirmation {
-                Some(Confirmation::Solve) => app.delete_last_solve()?,
+                Some(Confirmation::Solve) => app.delete_selected_solve()?,
                 Some(Confirmation::Session) => app.delete_session()?,
                 _ => (),
             },
@@ -23,14 +23,18 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> Result<bool> {
         }
     } else if let KeyModifiers::CONTROL = key.modifiers {
         match key.code {
-            KeyCode::Char('e') => app.scroll_down(),
-            KeyCode::Char('y') => app.scroll_up(),
+            KeyCode::Char('e') => app.session.scroll_down(),
+            KeyCode::Char('y') => app.session.scroll_up(),
             _ => (),
         }
     } else {
         match key.code {
             KeyCode::Esc => app.cancel_timer(),
             KeyCode::Char('q') => return Ok(true),
+            KeyCode::Char('j') | KeyCode::Down => app.session.next(),
+            KeyCode::Char('k') | KeyCode::Up => app.session.previous(),
+            KeyCode::Char('g') => app.session.select_first(),
+            KeyCode::Char('G') => app.session.select_last(),
             KeyCode::Char('r') => app.generate_scramble(),
             KeyCode::Char('R') => {
                 if let Some(scramble) = &app.last_scramble {
@@ -42,7 +46,7 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> Result<bool> {
             KeyCode::Char('I') => {
                 app.inspection_warning_enabled = !app.inspection_warning_enabled;
             }
-            KeyCode::Char('d') => app.delete_last_solve()?,
+            KeyCode::Char('d') => app.delete_selected_solve()?,
             KeyCode::Char('p') => app.toggle_plus_two()?,
             KeyCode::Char('D') => app.toggle_dnf()?,
             KeyCode::Char('c') => app.delete_session()?,

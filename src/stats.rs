@@ -201,7 +201,7 @@ pub fn get_avg(solves: &[Solve], avg_of: usize) -> Option<StatEntry> {
     Some(StatEntry::new(sum / (avg_of - 2) as u128, Penalty::Ok))
 }
 
-fn get_solves_from_tail(solves: &[Solve], count: usize) -> Option<&[Solve]> {
+pub fn get_solves_from_tail(solves: &[Solve], count: usize) -> Option<&[Solve]> {
     let length = solves.len();
 
     if length < count {

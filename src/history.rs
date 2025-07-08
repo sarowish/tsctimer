@@ -1,7 +1,7 @@
 use anyhow::{bail, Result};
 use std::path::PathBuf;
 
-use crate::app::{Session, Solve};
+use crate::{app::Solve, session::Session};
 
 const PACKAGE_NAME: &str = env!("CARGO_PKG_NAME");
 

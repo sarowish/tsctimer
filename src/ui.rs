@@ -69,7 +69,11 @@ pub fn render(f: &mut Frame, app: &mut App) {
 
     match app.confirmation {
         Some(Confirmation::Solve) => {
-            render_confirmation_window(f, "Are you sure you want to delete the latest solve?");
+            let solve_idx = app.session.solves.len() - app.session.state.selected().unwrap();
+            render_confirmation_window(
+                f,
+                &format!("Are you sure you want to delete the solve `{solve_idx}`?"),
+            );
         }
         Some(Confirmation::Session) => render_confirmation_window(
             f,
@@ -164,7 +168,26 @@ fn render_solves(f: &mut Frame, app: &mut App, area: Rect) {
         Constraint::Percentage(25),
     ];
 
+    let block = Block::default().borders(Borders::ALL).title(Span::styled(
+        format!(
+            "Solves [{}/{}]",
+            app.get_stats().valid_solve_count,
+            app.get_stats().solve_count
+        ),
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD),
+    ));
+
+    app.session.available_height = block.inner(area).height - 1;
+
     let solves = Table::new(solves, widths)
+        .row_highlight_style(
+            Style::new()
+                .fg(Color::Magenta)
+                .bg(Color::Black)
+                .add_modifier(Modifier::BOLD),
+        )
         .header(
             Row::new(vec![" ", "time", "ao5", "ao12"]).style(
                 Style::default()
@@ -172,28 +195,9 @@ fn render_solves(f: &mut Frame, app: &mut App, area: Rect) {
                     .add_modifier(Modifier::BOLD),
             ),
         )
-        .block(
-            Block::default().borders(Borders::ALL).title(Span::styled(
-                format!(
-                    "Solves [{}/{}]",
-                    app.get_stats().valid_solve_count,
-                    app.get_stats().solve_count
-                ),
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            )),
-        );
+        .block(block);
 
-    let height = area.height as usize - 3;
-
-    if height > app.get_solves().len() {
-        app.scroll(0);
-    } else if height > app.get_solves().len() - app.solves_state.offset() {
-        app.scroll(app.get_solves().len() - height);
-    }
-
-    f.render_stateful_widget(solves, area, &mut app.solves_state);
+    f.render_stateful_widget(solves, area, &mut app.session.state);
 }
 
 fn render_scramble(f: &mut Frame, app: &App, area: Rect) {
