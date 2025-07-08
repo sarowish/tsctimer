@@ -112,7 +112,13 @@ fn render_stats(f: &mut Frame, app: &App, area: Rect) {
     ];
 
     let stats = Table::new(stats, widths)
-        .header(Row::new(vec!["      ", "Current", "Best"]))
+        .header(
+            Row::new(vec!["      ", "Current", "Best"]).style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        )
         .column_spacing(2)
         .block(
             Block::default().borders(Borders::ALL).title(Span::styled(
@@ -159,7 +165,13 @@ fn render_solves(f: &mut Frame, app: &mut App, area: Rect) {
     ];
 
     let solves = Table::new(solves, widths)
-        .header(Row::new(vec![" ", "time", "ao5", "ao12"]))
+        .header(
+            Row::new(vec![" ", "time", "ao5", "ao12"]).style(
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        )
         .block(
             Block::default().borders(Borders::ALL).title(Span::styled(
                 format!(
