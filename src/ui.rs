@@ -228,10 +228,10 @@ fn render_timer(f: &mut Frame, app: &App, area: Rect) {
 
     let time_text = Paragraph::new(Text::styled(
         time,
-        Style::default().fg(if matches!(app.state, AppState::Set) {
-            Color::Green
-        } else {
-            Color::White
+        Style::default().fg(match app.state {
+            AppState::Ready if app.supports_keyboard_enhancement => Color::Red,
+            AppState::Set => Color::Green,
+            _ => Color::White,
         }),
     ))
     .alignment(Alignment::Center);
@@ -258,6 +258,7 @@ fn render_inspection(f: &mut Frame, app: &App, area: Rect) {
     let time_text = Paragraph::new(Text::styled(
         time,
         Style::default().fg(match app.state {
+            AppState::Ready if app.supports_keyboard_enhancement => Color::Blue,
             AppState::Idle | AppState::Ready if remaining <= 3 => Color::Red,
             AppState::Idle | AppState::Ready if remaining <= 7 => Color::Yellow,
             AppState::Set => Color::Green,
