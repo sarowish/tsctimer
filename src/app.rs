@@ -7,6 +7,7 @@ use crate::{
     timer::Timer,
 };
 use anyhow::Result;
+use crossterm::terminal;
 use ratatui::widgets::TableState;
 use std::{
     cmp::Ordering,
@@ -41,6 +42,7 @@ pub struct App {
     pub inspection_enabled: bool,
     pub inspection_warning_enabled: bool,
     pub confirmation: Option<Confirmation>,
+    pub supports_keyboard_enhancement: bool,
 }
 
 impl App {
@@ -59,6 +61,7 @@ impl App {
             inspection_enabled: true,
             inspection_warning_enabled: true,
             confirmation: None,
+            supports_keyboard_enhancement: terminal::supports_keyboard_enhancement()?,
         };
 
         app.generate_scramble_preview();

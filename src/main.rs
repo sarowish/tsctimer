@@ -1,29 +1,31 @@
 mod app;
 mod cube;
 mod history;
+mod input;
 mod inspection;
 mod scramble;
 mod stats;
 mod timer;
 mod ui;
 
-use crate::app::App;
 use anyhow::Result;
-use app::{AppState, Confirmation, Penalty};
-use crossterm::event::Event;
-use crossterm::event::KeyCode;
-use crossterm::event::KeyModifiers;
-use crossterm::execute;
-use crossterm::terminal::{disable_raw_mode, LeaveAlternateScreen};
-use ratatui::backend::Backend;
-use ratatui::Terminal;
-use std::io;
-use std::time::Duration;
-use std::time::Instant;
+use app::{App, AppState};
+use crossterm::{
+    event::{self, Event, KeyboardEnhancementFlags},
+    execute, queue,
+    terminal::{
+        self, disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+    },
+};
+use input::{handle_key, on_space_release};
+use ratatui::{prelude::CrosstermBackend, DefaultTerminal, Terminal};
+use std::io::{self, Write};
+use std::panic;
+use std::time::{Duration, Instant};
 use ui::render;
 
 fn main() -> Result<()> {
-    let mut terminal = ratatui::init();
+    let mut terminal = init_terminal()?;
     terminal.clear()?;
 
     let mut app = App::new()?;
@@ -38,15 +40,11 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> {
+fn run_tui(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
     let tick_rate = Duration::from_millis(100);
     let mut last_tick = Instant::now();
 
     loop {
-        if matches!(app.state, AppState::Set) {
-            app.timer.reset();
-        }
-
         if !app.inspection.tick(app.inspection_warning_enabled) {
             app.add_solve()?;
             app.state = AppState::Idle;
@@ -58,75 +56,19 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
         if crossterm::event::poll(timeout)? {
             if let Event::Key(key) = crossterm::event::read()? {
-                if app.confirmation.is_some() {
-                    match key.code {
-                        KeyCode::Char('y') => match app.confirmation {
-                            Some(Confirmation::Solve) => app.delete_last_solve()?,
-                            Some(Confirmation::Session) => app.delete_session()?,
-                            _ => (),
-                        },
-                        KeyCode::Char('n') => app.confirmation = None,
-                        _ => (),
-                    }
-                } else if let KeyModifiers::CONTROL = key.modifiers {
-                    match key.code {
-                        KeyCode::Char('e') => app.scroll_down(),
-                        KeyCode::Char('y') => app.scroll_up(),
-                        _ => (),
-                    }
-                } else {
-                    match key.code {
-                        KeyCode::Esc => app.cancel_timer(),
-                        KeyCode::Char('q') => break,
-                        KeyCode::Char('r') => app.generate_scramble(),
-                        KeyCode::Char('R') => {
-                            if let Some(scramble) = &app.last_scramble {
-                                app.scramble = scramble.clone();
-                                app.generate_scramble_preview();
-                            }
-                        }
-                        KeyCode::Char('i') => app.inspection_enabled = !app.inspection_enabled,
-                        KeyCode::Char('I') => {
-                            app.inspection_warning_enabled = !app.inspection_warning_enabled;
-                        }
-                        KeyCode::Char('d') => app.delete_last_solve()?,
-                        KeyCode::Char('p') => app.toggle_plus_two()?,
-                        KeyCode::Char('D') => app.toggle_dnf()?,
-                        KeyCode::Char('c') => app.delete_session()?,
-                        KeyCode::Char('s') => app.next_session()?,
-                        KeyCode::Char('S') => app.previous_session()?,
-                        KeyCode::Char(' ') => match app.state {
-                            AppState::Idle if !app.inspection.has_expired() => {
-                                if app.inspection_enabled && !app.inspection.is_running() {
-                                    app.start_inspecting();
-                                }
-
-                                app.state = AppState::Ready;
-                            }
-                            AppState::Ready => app.state = AppState::Set,
-                            AppState::Solving => {
-                                app.stop_timer()?;
-                            }
-                            _ => (),
-                        },
-                        _ => (),
-                    }
+                if handle_key(key, app)? {
+                    break;
                 }
             }
+
             last_tick = Instant::now();
-        } else {
-            if app.inspection.has_expired() {
-                app.inspection.penalty = Penalty::Ok;
-            }
+            continue;
+        } else if !app.supports_keyboard_enhancement {
+            on_space_release(app);
+        }
 
-            match app.state {
-                AppState::Set => {
-                    app.inspection.stop();
-                    app.start_timer();
-                }
-                AppState::Ready => app.state = AppState::Idle,
-                _ => (),
-            }
+        if app.inspection.has_expired() {
+            app.inspection.reset();
         }
 
         if last_tick.elapsed() >= tick_rate {
@@ -137,9 +79,45 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> 
     Ok(())
 }
 
+fn set_panic_hook() {
+    let hook = panic::take_hook();
+    panic::set_hook(Box::new(move |info| {
+        reset_terminal().unwrap();
+        hook(info);
+    }));
+}
+
+fn init_terminal() -> io::Result<DefaultTerminal> {
+    set_panic_hook();
+    enable_raw_mode()?;
+
+    let mut stdout = io::stdout();
+    queue!(stdout, EnterAlternateScreen)?;
+
+    if terminal::supports_keyboard_enhancement()? {
+        queue!(
+            stdout,
+            event::PushKeyboardEnhancementFlags(KeyboardEnhancementFlags::REPORT_EVENT_TYPES)
+        )?;
+    }
+
+    // `REPORT_EVENT_TYPES` doesn't get enabled if it is placed before `EnterAlternateScreen`
+    stdout.flush()?;
+
+    let backend = CrosstermBackend::new(stdout);
+    Terminal::new(backend)
+}
+
 fn reset_terminal() -> Result<()> {
     disable_raw_mode()?;
-    execute!(io::stdout(), LeaveAlternateScreen)?;
+
+    let mut stdout = io::stdout();
+
+    if terminal::supports_keyboard_enhancement()? {
+        queue!(stdout, event::PopKeyboardEnhancementFlags)?;
+    }
+
+    execute!(stdout, LeaveAlternateScreen)?;
 
     Ok(())
 }

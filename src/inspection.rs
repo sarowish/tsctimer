@@ -34,7 +34,10 @@ impl Inspection {
         }
 
         self.starting_time = None;
-        self.played_sound = 0;
+    }
+
+    pub fn reset(&mut self) {
+        *self = Self::new();
     }
 
     pub fn elapsed(&self) -> Option<u64> {
