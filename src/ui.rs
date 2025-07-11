@@ -69,7 +69,7 @@ pub fn render(f: &mut Frame, app: &mut App) {
 
     match app.confirmation {
         Some(Confirmation::Solve) => {
-            let solve_idx = app.session.solves.len() - app.session.state.selected().unwrap();
+            let solve_idx = app.session.selected_idx().unwrap() + 1;
             render_confirmation_window(
                 f,
                 &format!("Are you sure you want to delete the solve `{solve_idx}`?"),
