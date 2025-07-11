@@ -40,8 +40,8 @@ impl Timer {
 
 impl fmt::Display for Timer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let time = if let Some(starting_time) = self.starting_time {
-            starting_time.elapsed().unwrap()
+        let time = if let Some(elapsed) = self.starting_time.and_then(|time| time.elapsed().ok()) {
+            elapsed
         } else {
             self.result
         }
