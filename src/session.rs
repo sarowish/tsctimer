@@ -87,35 +87,54 @@ impl Session {
         self.select_with_index(self.solves.len().checked_sub(1).unwrap_or_default());
     }
 
-    pub fn scroll_up(&mut self) {
+    pub fn scroll_up(&mut self, by: usize, move_cursor: bool) {
         let offset = self.state.offset_mut();
-        *offset = offset.saturating_sub(1);
+        *offset = offset.saturating_sub(by);
 
         let offset = self.state.offset();
 
-        if let Some(selected) = self
-            .state
-            .selected_mut()
-            .as_mut()
-            .filter(|selected| **selected >= offset + self.available_height as usize)
-        {
+        let Some(selected) = self.state.selected_mut() else {
+            return;
+        };
+
+        if move_cursor {
+            *selected = selected.saturating_sub(by);
+        } else if *selected >= offset + self.available_height as usize {
             *selected -= 1;
         }
     }
 
-    pub fn scroll_down(&mut self) {
+    pub fn scroll_down(&mut self, by: usize, move_cursor: bool) {
+        let len = self.solves.len();
         let offset = self.state.offset_mut();
-        *offset = (*offset + 1).min(self.solves.len());
+        *offset = (*offset + by).min(len);
 
         let offset = self.state.offset();
 
-        if let Some(selected) = self
-            .state
-            .selected_mut()
-            .as_mut()
-            .filter(|selected| **selected < offset)
-        {
+        let Some(selected) = self.state.selected_mut() else {
+            return;
+        };
+
+        if move_cursor {
+            *selected = (*selected + by).min(len);
+        } else if *selected < offset {
             *selected += 1;
         }
+    }
+
+    pub fn scroll_up_half(&mut self) {
+        self.scroll_up(self.available_height as usize / 2, true);
+    }
+
+    pub fn scroll_down_half(&mut self) {
+        self.scroll_down(self.available_height as usize / 2, true);
+    }
+
+    pub fn scroll_up_full(&mut self) {
+        self.scroll_up(self.available_height as usize, true);
+    }
+
+    pub fn scroll_down_full(&mut self) {
+        self.scroll_down(self.available_height as usize, true);
     }
 }

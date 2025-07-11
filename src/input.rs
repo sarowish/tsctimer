@@ -23,8 +23,12 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> Result<bool> {
         }
     } else if let KeyModifiers::CONTROL = key.modifiers {
         match key.code {
-            KeyCode::Char('e') => app.session.scroll_down(),
-            KeyCode::Char('y') => app.session.scroll_up(),
+            KeyCode::Char('e') => app.session.scroll_down(1, false),
+            KeyCode::Char('y') => app.session.scroll_up(1, false),
+            KeyCode::Char('d') => app.session.scroll_down_half(),
+            KeyCode::Char('u') => app.session.scroll_up_half(),
+            KeyCode::Char('f') => app.session.scroll_down_full(),
+            KeyCode::Char('b') => app.session.scroll_up_full(),
             _ => (),
         }
     } else {
