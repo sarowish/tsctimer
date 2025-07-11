@@ -50,7 +50,7 @@ impl From<char> for Face {
             'B' => Face::Back,
             'R' => Face::Right,
             'L' => Face::Left,
-            _ => panic!(),
+            _ => panic!("Unexpected face character")
         }
     }
 }
@@ -95,7 +95,7 @@ impl From<char> for Rotation {
             '\0' => Rotation::Clockwise,
             '\'' => Rotation::CounterClockwise,
             '2' => Rotation::DoubleTurn,
-            _ => panic!(),
+            _ => panic!("Unexpected rotation character"),
         }
     }
 }
