@@ -40,10 +40,10 @@ pub fn read_history(path: PathBuf) -> Result<Session> {
         let record = result?;
 
         let solve = Solve::from_history_file(
-            record[0].parse().unwrap(),
-            record[1].parse().unwrap(),
+            record[0].parse()?,
+            record[1].parse()?,
             &record[2],
-            record[3].parse().unwrap(),
+            record[3].parse()?,
         );
 
         session.solves.push(solve);
