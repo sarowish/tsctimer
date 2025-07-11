@@ -11,6 +11,7 @@ use anyhow::Result;
 use crossterm::terminal;
 use std::{
     cmp::Ordering,
+    ffi::OsStr,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
@@ -64,18 +65,16 @@ impl App {
 
         app.generate_scramble_preview();
 
-        for session_file in history::get_sessions_list().unwrap() {
-            let idx = session_file
+        for session_file in history::get_sessions_list()? {
+            let Some(idx) = session_file
                 .file_stem()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .split_once('_')
-                .unwrap()
-                .1
-                .parse::<usize>()
-                .unwrap()
-                - 1;
+                .and_then(OsStr::to_str)
+                .and_then(|s| s.split_once('_'))
+                .and_then(|s| s.1.parse::<usize>().ok())
+                .and_then(|num| num.checked_sub(1))
+            else {
+                continue;
+            };
 
             match idx.cmp(&app.available_sessions.len()) {
                 Ordering::Less => app.available_sessions[idx] = true,
@@ -91,7 +90,7 @@ impl App {
 
         if app.available_sessions.is_empty() {
             app.available_sessions.push(false);
-        } else {
+        } else if app.available_sessions[0] {
             app.load_session()?;
         }
 
@@ -104,7 +103,7 @@ impl App {
             self.selected_session_idx + 1
         ))?;
 
-        let mut session = history::read_history(path).unwrap();
+        let mut session = history::read_history(path)?;
 
         let mut start = 0;
         let mut end = 4;

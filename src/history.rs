@@ -19,14 +19,10 @@ fn get_history_dir() -> Result<PathBuf> {
 }
 
 pub fn get_sessions_list() -> Result<Vec<PathBuf>> {
-    let mut entries = Vec::new();
-
-    for entry in std::fs::read_dir(get_history_dir()?)? {
-        let path = entry?.path();
-        entries.push(path);
-    }
-
-    Ok(entries)
+    Ok(std::fs::read_dir(get_history_dir()?)?
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .collect())
 }
 
 pub fn get_session_history_file(file_name: &str) -> Result<PathBuf> {
