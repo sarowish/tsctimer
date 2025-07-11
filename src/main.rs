@@ -10,7 +10,7 @@ mod timer;
 mod ui;
 
 use anyhow::Result;
-use app::{App, AppState};
+use app::{App, AppState, Penalty};
 use crossterm::{
     event::{self, Event, KeyboardEnhancementFlags},
     execute, queue,
@@ -69,7 +69,7 @@ fn run_tui(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
         }
 
         if app.inspection.has_expired() {
-            app.inspection.reset();
+            app.inspection.penalty = Penalty::Ok;
         }
 
         if last_tick.elapsed() >= tick_rate {
