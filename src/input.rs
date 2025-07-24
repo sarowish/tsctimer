@@ -9,6 +9,8 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> Result<bool> {
         }
 
         return Ok(false);
+    } else if !matches!(app.state, AppState::Idle) || app.inspection.is_running() {
+        return handle_timer_key(key, app);
     }
 
     if app.confirmation.is_some() {
@@ -33,7 +35,6 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> Result<bool> {
         }
     } else {
         match key.code {
-            KeyCode::Esc => app.cancel_timer(),
             KeyCode::Char('q') => return Ok(true),
             KeyCode::Char('j') | KeyCode::Down => app.session.next(),
             KeyCode::Char('k') | KeyCode::Up => app.session.previous(),
@@ -56,25 +57,38 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> Result<bool> {
             KeyCode::Char('c') => app.delete_session()?,
             KeyCode::Char('s') => app.next_session()?,
             KeyCode::Char('S') => app.previous_session()?,
-            KeyCode::Char(' ') => match app.state {
-                AppState::Idle if !app.inspection.has_expired() => {
+            KeyCode::Char(' ') => {
+                if !app.inspection.has_expired() {
                     if app.inspection_enabled && !app.inspection.is_running() {
                         app.start_inspecting();
                     }
 
                     app.state = AppState::Ready;
                 }
-                AppState::Ready => {
-                    app.state = AppState::Set;
-                    app.timer.reset();
-                }
-                AppState::Solving => {
-                    app.stop_timer()?;
-                }
-                _ => (),
-            },
+            }
             _ => (),
         }
+    }
+
+    Ok(false)
+}
+
+fn handle_timer_key(key: KeyEvent, app: &mut App) -> Result<bool> {
+    match key.code {
+        KeyCode::Esc => app.cancel_timer(),
+        KeyCode::Char('q') => return Ok(true),
+        KeyCode::Char(' ') => match app.state {
+            AppState::Idle if app.inspection.is_running() => app.state = AppState::Ready,
+            AppState::Ready => {
+                app.state = AppState::Set;
+                app.timer.reset();
+            }
+            AppState::Solving => {
+                app.stop_timer()?;
+            }
+            _ => (),
+        },
+        _ => (),
     }
 
     Ok(false)
