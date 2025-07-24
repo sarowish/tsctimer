@@ -72,7 +72,7 @@ pub fn render(f: &mut Frame, app: &mut App) {
             let solve_idx = app.session.selected_idx().unwrap() + 1;
             render_confirmation_window(
                 f,
-                &format!("Are you sure you want to delete the solve `{solve_idx}`?"),
+                &format!("Are you sure you want to delete the solve #{solve_idx}?"),
             );
         }
         Some(Confirmation::Session) => render_confirmation_window(
