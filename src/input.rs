@@ -9,12 +9,10 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> Result<bool> {
         }
 
         return Ok(false);
-    } else if !matches!(app.state, AppState::Idle) || app.inspection.is_running() {
-        return handle_timer_key(key, app);
     }
 
-    if app.confirmation.is_some() {
-        match key.code {
+    match app.state {
+        _ if app.confirmation.is_some() => match key.code {
             KeyCode::Char('y') => match app.confirmation {
                 Some(Confirmation::Solve) => app.delete_selected_solve()?,
                 Some(Confirmation::Session) => app.delete_session()?,
@@ -22,8 +20,13 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> Result<bool> {
             },
             KeyCode::Char('n') => app.confirmation = None,
             _ => (),
-        }
-    } else if let KeyModifiers::CONTROL = key.modifiers {
+        },
+        AppState::Idle if !app.inspection.is_running() => (),
+        AppState::SolveInfo => return handle_solve_info_key(key, app),
+        _ => return handle_timer_key(key, app),
+    }
+
+    if let KeyModifiers::CONTROL = key.modifiers {
         match key.code {
             KeyCode::Char('e') => app.session.scroll_down(1, false),
             KeyCode::Char('y') => app.session.scroll_up(1, false),
@@ -35,6 +38,7 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> Result<bool> {
         }
     } else {
         match key.code {
+            KeyCode::Esc => app.state = AppState::Idle,
             KeyCode::Char('q') => return Ok(true),
             KeyCode::Char('j') | KeyCode::Down => app.session.next(),
             KeyCode::Char('k') | KeyCode::Up => app.session.previous(),
@@ -47,8 +51,13 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> Result<bool> {
                     app.generate_scramble_preview();
                 }
             }
-            KeyCode::Char('i') => app.inspection_enabled = !app.inspection_enabled,
-            KeyCode::Char('I') => {
+            KeyCode::Char('i') => {
+                if app.session.selected_idx().is_some() {
+                    app.state = AppState::SolveInfo
+                }
+            }
+            KeyCode::Char('e') => app.inspection_enabled = !app.inspection_enabled,
+            KeyCode::Char('E') => {
                 app.inspection_warning_enabled = !app.inspection_warning_enabled;
             }
             KeyCode::Char('d') => app.delete_selected_solve()?,
@@ -88,6 +97,21 @@ fn handle_timer_key(key: KeyEvent, app: &mut App) -> Result<bool> {
             }
             _ => (),
         },
+        _ => (),
+    }
+
+    Ok(false)
+}
+
+fn handle_solve_info_key(key: KeyEvent, app: &mut App) -> Result<bool> {
+    match key.code {
+        KeyCode::Esc => app.state = AppState::Idle,
+        KeyCode::Char('j') | KeyCode::Down => app.session.next(),
+        KeyCode::Char('k') | KeyCode::Up => app.session.previous(),
+        KeyCode::Char('q') => return Ok(true),
+        KeyCode::Char('d') => app.delete_selected_solve()?,
+        KeyCode::Char('p') => app.toggle_plus_two()?,
+        KeyCode::Char('D') => app.toggle_dnf()?,
         _ => (),
     }
 

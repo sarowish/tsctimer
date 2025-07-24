@@ -5,11 +5,12 @@ use crate::{
     stats::stat_line_to_row,
     timer::millis_to_string_not_running,
 };
+use chrono::{Local, TimeZone};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span, Text},
-    widgets::{Block, Borders, Clear, Paragraph, Row, Table, Wrap},
+    widgets::{Block, Borders, Clear, Padding, Paragraph, Row, Table, Wrap},
     Frame,
 };
 
@@ -66,6 +67,10 @@ pub fn render(f: &mut Frame, app: &mut App) {
         render_solves(f, app, chunks[1]);
     }
     render_cube(f, app, chunks[3]);
+
+    if let AppState::SolveInfo = app.state {
+        render_info_window(f, app);
+    }
 
     match app.confirmation {
         Some(Confirmation::Solve) => {
@@ -274,6 +279,57 @@ fn render_inspection(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(time_text, area);
 }
 
+fn info_window_row<'a>(field: &'a str, value: &'a str) -> Row<'a> {
+    Row::new(vec![
+        Text::styled(
+            field,
+            Style::new().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        ),
+        Text::from(value),
+    ])
+}
+
+fn render_info_window(f: &mut Frame, app: &App) {
+    let window = popup_window_from_dimensions(9, 100, f.area());
+    f.render_widget(Clear, window);
+
+    let Some(idx) = app.session.selected_idx() else {
+        return;
+    };
+
+    let block = Block::default()
+        .title(Span::styled(
+            format!("Solve #{}", idx + 1),
+            Style::new().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+        ))
+        .padding(Padding::symmetric(2, 1))
+        .borders(Borders::ALL);
+    let info_area = block.inner(window);
+    f.render_widget(block, window);
+
+    let solve = &app.session.solves[idx];
+    let time = solve.time.to_string();
+    let avg5 = solve.avg_of_5.map_or(String::from("-"), |t| t.to_string());
+    let avg12 = solve.avg_of_12.map_or(String::from("-"), |t| t.to_string());
+    let scramble = solve.scramble.to_string();
+    let date = Local
+        .timestamp_opt(solve.date as i64, 0)
+        .unwrap()
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string();
+
+    let lines = vec![
+        info_window_row("Time:", &time),
+        info_window_row("Average of 5:", &avg5),
+        info_window_row("Average of 12:", &avg12),
+        info_window_row("Scramble:", &scramble),
+        info_window_row("Date:", &date),
+    ];
+
+    let table = Table::new(lines, &[Constraint::Length(15), Constraint::Fill(1)]);
+    f.render_widget(table, info_area);
+}
+
 impl From<&Face> for Span<'_> {
     fn from(face: &Face) -> Self {
         let color: Color = (*face).into();
@@ -367,7 +423,7 @@ fn render_confirmation_window(f: &mut Frame, text: &str) {
     f.render_widget(no, no_area);
 }
 
-pub fn _popup_window_from_dimensions(height: u16, width: u16, r: Rect) -> Rect {
+pub fn popup_window_from_dimensions(height: u16, width: u16, r: Rect) -> Rect {
     let hor = [Constraint::Length(width)];
     let ver = [Constraint::Length(height)];
     popup_window(&hor, &ver, r)

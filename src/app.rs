@@ -19,9 +19,10 @@ pub const SCRAMBLE_LENGTH: u8 = 25;
 
 pub enum AppState {
     Idle,
-    Solving,
+    SolveInfo,
     Set,
     Ready,
+    Solving,
 }
 
 pub enum Confirmation {
@@ -275,6 +276,7 @@ impl App {
             if let Some(idx) = self.session.selected_idx() {
                 self.session.solves.remove(idx);
                 self.session.update_around(idx + 1);
+                self.state = AppState::Idle;
             }
 
             self.confirmation = None;
