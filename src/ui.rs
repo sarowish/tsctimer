@@ -6,7 +6,7 @@ use crate::{
     timer::millis_to_string_not_running,
 };
 use ratatui::{
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Clear, Paragraph, Row, Table, Wrap},
@@ -367,47 +367,40 @@ fn render_confirmation_window(f: &mut Frame, text: &str) {
     f.render_widget(no, no_area);
 }
 
+pub fn _popup_window_from_dimensions(height: u16, width: u16, r: Rect) -> Rect {
+    let hor = [Constraint::Length(width)];
+    let ver = [Constraint::Length(height)];
+    popup_window(&hor, &ver, r)
+}
+
 fn popup_window_from_percentage(hor_percent: u16, ver_percent: u16, r: Rect) -> Rect {
-    let ver = [
-        Constraint::Percentage((100 - ver_percent) / 2),
-        Constraint::Percentage(ver_percent),
-        Constraint::Percentage((100 - ver_percent) / 2),
-    ];
-
-    let hor = [
-        Constraint::Percentage((100 - hor_percent) / 2),
-        Constraint::Percentage(hor_percent),
-        Constraint::Percentage((100 - hor_percent) / 2),
-    ];
-
+    let ver = [Constraint::Percentage(ver_percent)];
+    let hor = [Constraint::Percentage(hor_percent)];
     popup_window(&hor, &ver, r)
 }
 
 fn popup_window(hor_constraints: &[Constraint], ver_constraints: &[Constraint], r: Rect) -> Rect {
-    let popup_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(ver_constraints)
-        .split(r);
+    let [popup_layout] = Layout::vertical(ver_constraints)
+        .flex(Flex::Center)
+        .vertical_margin(1)
+        .areas(r);
 
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(hor_constraints)
-        .split(popup_layout[1])[1]
+    Layout::horizontal(hor_constraints)
+        .flex(Flex::Center)
+        .horizontal_margin(1)
+        .areas::<1>(popup_layout)[0]
 }
 
 fn center_vertically(text: &str, area: Rect) -> Rect {
     let line_count = text.lines().count() as u16;
 
     let chunks = Layout::default()
-        .constraints([
-            Constraint::Length(area.height.saturating_sub(line_count) / 2),
-            Constraint::Length(line_count),
-            Constraint::Min(1),
-        ])
+        .constraints([Constraint::Length(line_count)])
+        .flex(Flex::Center)
         .direction(Direction::Vertical)
         .split(area);
 
-    chunks[1]
+    chunks[0]
 }
 
 fn generate_font(text: &str) -> String {
