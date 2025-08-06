@@ -109,6 +109,7 @@ fn handle_solve_info_key(key: KeyEvent, app: &mut App) -> Result<bool> {
         KeyCode::Char('j') | KeyCode::Down => app.session.next(),
         KeyCode::Char('k') | KeyCode::Up => app.session.previous(),
         KeyCode::Char('q') => return Ok(true),
+        KeyCode::Char('i') => app.state = AppState::Idle,
         KeyCode::Char('d') => app.delete_selected_solve()?,
         KeyCode::Char('p') => app.toggle_plus_two()?,
         KeyCode::Char('D') => app.toggle_dnf()?,
