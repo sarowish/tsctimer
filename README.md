@@ -27,8 +27,9 @@ cargo install tsctimer --git https://github.com/sarowish/tsctimer
 | `ctrl-y`                   | scroll solves list upwards (without moving cursor)   |
 | `r`                        | rescramble                                           |
 | `R`                        | display last scramble                                |
-| `i`                        | enable/disable inspection                            |
-| `I`                        | enable/disable inspection warning                    |
+| `e`                        | enable/disable inspection                            |
+| `E`                        | enable/disable inspection warning                    |
+| `i`                        | toggle solve info window                             |
 | `d`                        | delete selected solve                                |
 | `c`                        | delete session                                       |
 | `D`                        | mark selected solve as dnf                           |
